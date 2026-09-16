@@ -126,11 +126,17 @@ export default function AuthView() {
 
   const handleQuickLogin = (userId) => {
     setError('');
+    const email = userId === 'user_ananya' ? 'ananya.sharma@example.com' : 'vikram.patel@example.com';
+    setSigninEmail(email);
+    setSigninCredential('1234');
     setQuickLoadingId(userId);
     setTimeout(() => {
-      loginById(userId);
+      const res = loginById(userId);
+      if (!res?.success) {
+        setError(res?.error || 'Failed to sign in. Please try again.');
+      }
       setQuickLoadingId(null);
-    }, 500);
+    }, 250);
   };
 
   const handleSignUp = (e) => {
