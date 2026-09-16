@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="wineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#802B3E" />
+      <stop offset="100%" stop-color="#581845" />
+    </linearGradient>
+    <linearGradient id="pinkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF0F3" />
+      <stop offset="100%" stop-color="#F8BBD0" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="24" fill="url(#wineGrad)" />
+  <circle cx="50" cy="50" r="38" fill="none" stroke="#F8BBD0" stroke-width="2" stroke-dasharray="4 3" opacity="0.6" />
+  <!-- Heart and brain synapse symbol -->
+  <path d="M50 30 C42 18 24 24 24 38 C24 53 45 68 50 74 C55 68 76 53 76 38 C76 24 58 18 50 30 Z" fill="url(#pinkGrad)" />
+  <!-- Gentle lotus / memory spark in ivory -->
+  <circle cx="50" cy="44" r="5" fill="#6B1D2F" />
+  <path d="M50 35 L50 25 M40 40 L32 34 M60 40 L68 34 M50 53 L50 63" stroke="#6B1D2F" stroke-width="2" stroke-linecap="round" />
+</svg>

@@ -1,0 +1,19 @@
+{
+  "name": "MIRA NER - Memory Intelligence & Reminiscence Assistant",
+  "short_name": "MIRA NER",
+  "description": "AI-powered cognitive gaming and memory assistance platform designed for elderly dementia patients in North Eastern India.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFDF9",
+  "theme_color": "#6B1D2F",
+  "orientation": "any",
+  "categories": ["health", "medical", "education"],
+  "icons": [
+    {
+      "src": "/mira-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
