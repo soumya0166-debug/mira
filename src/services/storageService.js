@@ -233,6 +233,132 @@ const DEMO_CARE_NOTES_VIKRAM = [
   { id: 'vnote-2', date: 'Yesterday, 08:00 PM', author: 'Dr. Vikram Patel (Guardian)', mood: 'Calm and reflective 🕊️', content: 'Completed the chess puzzle section in his afternoon routine. Solved 2 out of 3 puzzles independently — excellent cognitive engagement today.' }
 ];
 
+// ─── Demo CDR-Inspired Screening Assessments ──────────────────────────────
+const DEMO_CDR_ASSESSMENTS_ANANYA = [
+  {
+    id: 'cdr-a-1',
+    user_id: 'user_ananya',
+    assessment_date: '2026-06-15T10:00:00.000Z',
+    month_label: 'June',
+    memory_score: 0.5,
+    orientation_score: 0.5,
+    judgment_score: 0.5,
+    community_score: 0.5,
+    home_hobbies_score: 0.5,
+    personal_care_score: 0.0,
+    total_score: 3.0,
+    observed_level: 'Very mild',
+    assessment_type: 'screening',
+    assessor: 'Ananya Sharma (Guardian)',
+    notes: 'Baseline screening. Mild memory recall delays noted for past events.'
+  },
+  {
+    id: 'cdr-a-2',
+    user_id: 'user_ananya',
+    assessment_date: '2026-07-16T11:30:00.000Z',
+    month_label: 'July',
+    memory_score: 1.0,
+    orientation_score: 0.5,
+    judgment_score: 0.5,
+    community_score: 0.5,
+    home_hobbies_score: 0.5,
+    personal_care_score: 0.0,
+    total_score: 3.5,
+    observed_level: 'Very mild',
+    assessment_type: 'screening',
+    assessor: 'Ananya Sharma (Guardian)',
+    notes: 'Slightly more difficulty recalling weekly appointments.'
+  },
+  {
+    id: 'cdr-a-3',
+    user_id: 'user_ananya',
+    assessment_date: '2026-08-18T10:15:00.000Z',
+    month_label: 'August',
+    memory_score: 1.0,
+    orientation_score: 0.5,
+    judgment_score: 1.0,
+    community_score: 0.5,
+    home_hobbies_score: 1.0,
+    personal_care_score: 0.0,
+    total_score: 4.0,
+    observed_level: 'Very mild',
+    assessment_type: 'screening',
+    assessor: 'Ananya Sharma (Guardian)',
+    notes: 'Enjoyed gardening; needed reminder for morning routine tasks.'
+  },
+  {
+    id: 'cdr-a-4',
+    user_id: 'user_ananya',
+    assessment_date: '2026-09-14T09:45:00.000Z',
+    month_label: 'September',
+    memory_score: 1.0,
+    orientation_score: 0.5,
+    judgment_score: 1.0,
+    community_score: 0.5,
+    home_hobbies_score: 1.0,
+    personal_care_score: 0.0,
+    total_score: 4.0,
+    observed_level: 'Very mild',
+    assessment_type: 'screening',
+    assessor: 'Ananya Sharma (Guardian)',
+    notes: 'Stable scores this month. Reminiscence gallery actively engaged.'
+  }
+];
+
+const DEMO_CDR_ASSESSMENTS_VIKRAM = [
+  {
+    id: 'cdr-v-1',
+    user_id: 'user_vikram',
+    assessment_date: '2026-07-01T10:00:00.000Z',
+    month_label: 'July',
+    memory_score: 0.5,
+    orientation_score: 0.0,
+    judgment_score: 0.5,
+    community_score: 0.5,
+    home_hobbies_score: 0.5,
+    personal_care_score: 0.0,
+    total_score: 2.0,
+    observed_level: 'Very mild',
+    assessment_type: 'screening',
+    assessor: 'Dr. Vikram Patel (Guardian)',
+    notes: 'Initial evaluation for Bapuji.'
+  },
+  {
+    id: 'cdr-v-2',
+    user_id: 'user_vikram',
+    assessment_date: '2026-08-01T10:00:00.000Z',
+    month_label: 'August',
+    memory_score: 0.5,
+    orientation_score: 0.5,
+    judgment_score: 0.5,
+    community_score: 0.5,
+    home_hobbies_score: 0.5,
+    personal_care_score: 0.0,
+    total_score: 2.5,
+    observed_level: 'Very mild',
+    assessment_type: 'screening',
+    assessor: 'Dr. Vikram Patel (Guardian)',
+    notes: 'Good attention maintained; active music and kite memory discussions.'
+  },
+  {
+    id: 'cdr-v-3',
+    user_id: 'user_vikram',
+    assessment_date: '2026-09-02T10:00:00.000Z',
+    month_label: 'September',
+    memory_score: 0.5,
+    orientation_score: 0.5,
+    judgment_score: 0.5,
+    community_score: 0.5,
+    home_hobbies_score: 0.5,
+    personal_care_score: 0.0,
+    total_score: 2.5,
+    observed_level: 'Very mild',
+    assessment_type: 'screening',
+    assessor: 'Dr. Vikram Patel (Guardian)',
+    notes: 'Stable profile over the past quarter.'
+  }
+];
+
 // ─── Demo User Registry (two pre-seeded demo accounts) ──────────────────────
 
 const DEMO_USERS = [
@@ -555,6 +681,54 @@ export const storageService = {
     return updated;
   },
 
+  // ── CDR-Inspired Cognitive Functional Screenings ──
+  getCDRAssessments() {
+    const uid = this._uid();
+    if (!uid) return [];
+    const data = localStorage.getItem(k(uid, 'cdr_assessments'));
+    if (!data) {
+      if (uid === 'user_ananya') {
+        localStorage.setItem(k(uid, 'cdr_assessments'), JSON.stringify(DEMO_CDR_ASSESSMENTS_ANANYA));
+        return DEMO_CDR_ASSESSMENTS_ANANYA;
+      }
+      if (uid === 'user_vikram') {
+        localStorage.setItem(k(uid, 'cdr_assessments'), JSON.stringify(DEMO_CDR_ASSESSMENTS_VIKRAM));
+        return DEMO_CDR_ASSESSMENTS_VIKRAM;
+      }
+      return [];
+    }
+    return JSON.parse(data);
+  },
+
+  saveCDRAssessment(assessment) {
+    const assessments = this.getCDRAssessments();
+    const uid = this._uid();
+    const newRecord = {
+      id: assessment.id || `cdr-${Date.now()}`,
+      user_id: uid,
+      assessment_date: assessment.assessment_date || new Date().toISOString(),
+      month_label: assessment.month_label || new Date().toLocaleString('default', { month: 'short' }),
+      memory_score: assessment.memory_score ?? assessment.memory ?? 0,
+      orientation_score: assessment.orientation_score ?? assessment.orientation ?? 0,
+      judgment_score: assessment.judgment_score ?? assessment.judgment_problem_solving ?? 0,
+      community_score: assessment.community_score ?? assessment.community_affairs ?? 0,
+      home_hobbies_score: assessment.home_hobbies_score ?? assessment.home_hobbies ?? 0,
+      personal_care_score: assessment.personal_care_score ?? assessment.personal_care ?? 0,
+      total_score: assessment.total_score,
+      observed_level: assessment.observed_level,
+      assessment_type: 'screening',
+      assessor: assessment.assessor || 'Caregiver / Self',
+      notes: assessment.notes || ''
+    };
+    const updated = [...assessments, newRecord];
+    if (uid) {
+      localStorage.setItem(k(uid, 'cdr_assessments'), JSON.stringify(updated));
+      indexedDBStorage.put('careNotes', { id: newRecord.id, type: 'cdr_assessment', ...newRecord }).catch(() => {});
+      syncQueue.enqueue('CDR_ASSESSMENT_SYNC', { userId: uid, assessment: newRecord }).catch(() => {});
+    }
+    return updated;
+  },
+
   getSettings() {
     const uid = this._uid();
     if (!uid) return { language: 'en', fontSize: 'normal', mode: 'guardian' };
@@ -584,6 +758,7 @@ export const storageService = {
       routines: this.getRoutines(),
       gameSessions: this.getGameSessions(),
       careNotes: this.getCareNotes(),
+      cdrAssessments: this.getCDRAssessments(),
       settings: this.getSettings()
     };
     return JSON.stringify(backup, null, 2);
@@ -600,6 +775,7 @@ export const storageService = {
       if (data.routines) localStorage.setItem(k(uid, 'routines'), JSON.stringify(data.routines));
       if (data.gameSessions) localStorage.setItem(k(uid, 'game_sessions'), JSON.stringify(data.gameSessions));
       if (data.careNotes) localStorage.setItem(k(uid, 'care_notes'), JSON.stringify(data.careNotes));
+      if (data.cdrAssessments) localStorage.setItem(k(uid, 'cdr_assessments'), JSON.stringify(data.cdrAssessments));
       if (data.settings) localStorage.setItem(k(uid, 'settings'), JSON.stringify(data.settings));
       return true;
     } catch (e) {
@@ -621,6 +797,7 @@ export const storageService = {
       localStorage.setItem(k(uid, 'routines'), JSON.stringify(DEMO_ROUTINES_ANANYA));
       localStorage.setItem(k(uid, 'game_sessions'), JSON.stringify(DEMO_GAME_SESSIONS_ANANYA));
       localStorage.setItem(k(uid, 'care_notes'), JSON.stringify(DEMO_CARE_NOTES_ANANYA));
+      localStorage.setItem(k(uid, 'cdr_assessments'), JSON.stringify(DEMO_CDR_ASSESSMENTS_ANANYA));
     } else if (isVikram) {
       localStorage.setItem(k(uid, 'patient'), JSON.stringify(DEMO_PATIENT_VIKRAM));
       localStorage.setItem(k(uid, 'guardian'), JSON.stringify(DEMO_GUARDIAN_VIKRAM));
@@ -628,11 +805,13 @@ export const storageService = {
       localStorage.setItem(k(uid, 'routines'), JSON.stringify(DEMO_ROUTINES_VIKRAM));
       localStorage.setItem(k(uid, 'game_sessions'), JSON.stringify(DEMO_GAME_SESSIONS_VIKRAM));
       localStorage.setItem(k(uid, 'care_notes'), JSON.stringify(DEMO_CARE_NOTES_VIKRAM));
+      localStorage.setItem(k(uid, 'cdr_assessments'), JSON.stringify(DEMO_CDR_ASSESSMENTS_VIKRAM));
     } else {
       localStorage.setItem(k(uid, 'memories'), JSON.stringify([]));
       localStorage.setItem(k(uid, 'routines'), JSON.stringify([]));
       localStorage.setItem(k(uid, 'game_sessions'), JSON.stringify([]));
       localStorage.setItem(k(uid, 'care_notes'), JSON.stringify([]));
+      localStorage.setItem(k(uid, 'cdr_assessments'), JSON.stringify([]));
     }
     localStorage.setItem(k(uid, 'settings'), JSON.stringify({ language: 'en', fontSize: 'normal', mode: 'guardian' }));
   }

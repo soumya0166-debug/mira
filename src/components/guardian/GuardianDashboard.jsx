@@ -17,10 +17,13 @@ import {
   RefreshCw,
   Database,
   CloudUpload,
-  CheckCircle2
+  CheckCircle2,
+  Activity,
+  ClipboardList
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import audioService from '../../services/audioService';
+import CDRAssessmentModal from '../wellness/CDRAssessmentModal';
 
 export default function GuardianDashboard() {
   const { 
@@ -42,9 +45,13 @@ export default function GuardianDashboard() {
     offlineActivitiesCount,
     storageHealth,
     syncNow,
-    refreshOfflineContent
+    refreshOfflineContent,
+    latestCDRAssessment,
+    cdrTrend,
+    setActiveTab
   } = useApp();
 
+  const [isCDRModalOpen, setIsCDRModalOpen] = useState(false);
   const [isSyncingManual, setIsSyncingManual] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState(null);
   const [isRefreshingContent, setIsRefreshingContent] = useState(false);
@@ -385,6 +392,69 @@ export default function GuardianDashboard() {
         </div>
       </div>
 
+      {/* ── CDR-Inspired Cognitive Functional Screening Summary Card ── */}
+      <div 
+        className="mira-card" 
+        style={{
+          marginBottom: '1.75rem',
+          borderLeft: '5px solid var(--wine-700)',
+          backgroundColor: '#ffffff'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+              <span className="badge" style={{ backgroundColor: '#fef3c7', color: '#92400e', borderColor: '#fde68a' }}>
+                Screening Protocol
+              </span>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                Non-diagnostic functional evaluation
+              </span>
+            </div>
+            <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.2rem', color: 'var(--wine-900)' }}>
+              CDR-Inspired Cognitive Functional Screening
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+              <div>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sum of Boxes: </span>
+                <strong style={{ fontSize: '1.15rem', color: 'var(--wine-900)' }}>
+                  {(latestCDRAssessment?.total_score ?? 4.0).toFixed(1)} / 18
+                </strong>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Observed Level: </span>
+                <strong style={{ fontSize: '0.95rem', color: '#0284c7' }}>
+                  {latestCDRAssessment?.observed_level ?? 'Very mild'}
+                </strong>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Trend: </span>
+                <strong style={{ fontSize: '0.95rem', color: cdrTrend?.color ?? '#2563eb' }}>
+                  {cdrTrend?.status ?? 'Stable'}
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.65rem' }}>
+            <button
+              onClick={() => setActiveTab('wellness')}
+              className="btn-secondary"
+              style={{ padding: '0.55rem 0.95rem', fontSize: '0.88rem' }}
+            >
+              View Full Profile & Radar
+            </button>
+            <button
+              onClick={() => setIsCDRModalOpen(true)}
+              className="btn-primary"
+              style={{ padding: '0.55rem 1rem', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              <ClipboardList size={16} /> Conduct Screening
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Caregiver Observation Journal */}
       <div className="mira-card" style={{ marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -547,6 +617,11 @@ export default function GuardianDashboard() {
           </button>
         </div>
       </div>
+      {/* CDR Screening Modal */}
+      <CDRAssessmentModal
+        isOpen={isCDRModalOpen}
+        onClose={() => setIsCDRModalOpen(false)}
+      />
     </div>
   );
 }

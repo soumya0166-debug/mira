@@ -7,6 +7,7 @@ import { syncManager } from '../offline/sync/syncManager';
 import { syncQueue } from '../offline/sync/syncQueue';
 import { cacheManager } from '../offline/cache/cacheManager';
 import { indexedDBStorage } from '../offline/storage/indexedDBStorage';
+import cdrScoringEngine, { calculateCDRScore, evaluateLongitudinalTrend } from '../services/cdrScoringEngine';
 
 const AppContext = createContext();
 
@@ -32,6 +33,7 @@ export function AppProvider({ children }) {
   const [routines, setRoutinesState] = useState(() => storageService.getRoutines());
   const [gameSessions, setGameSessionsState] = useState(() => storageService.getGameSessions());
   const [careNotes, setCareNotesState] = useState(() => storageService.getCareNotes());
+  const [cdrAssessments, setCdrAssessmentsState] = useState(() => storageService.getCDRAssessments());
 
   // ── Caregiver Permission & Accessibility States ──
   const [caregiverPermission, setCaregiverPermissionState] = useState('FULL_SHARED_DATA');
@@ -117,6 +119,7 @@ export function AppProvider({ children }) {
     setRoutinesState(storageService.getRoutines());
     setGameSessionsState(storageService.getGameSessions());
     setCareNotesState(storageService.getCareNotes());
+    setCdrAssessmentsState(storageService.getCDRAssessments());
     setActiveTab('home');
   }, []);
 
@@ -163,6 +166,7 @@ export function AppProvider({ children }) {
     setRoutinesState([]);
     setGameSessionsState([]);
     setCareNotesState([]);
+    setCdrAssessmentsState([]);
     audioService.playSoftClick();
   };
 
@@ -352,6 +356,29 @@ export function AppProvider({ children }) {
 
   const cognitiveScore = computeCognitiveScore();
 
+  // ── CDR-Inspired Cognitive Functional Screenings ──
+  const saveCDRAssessment = (assessmentInput) => {
+    const evaluated = assessmentInput.total_score !== undefined
+      ? assessmentInput
+      : calculateCDRScore(assessmentInput);
+    const updated = storageService.saveCDRAssessment(evaluated);
+    setCdrAssessmentsState(updated);
+    audioService.playSuccessChime();
+    return evaluated;
+  };
+
+  const latestCDRAssessment = useMemo(() => {
+    if (!cdrAssessments || cdrAssessments.length === 0) return null;
+    const sorted = [...cdrAssessments].sort((a, b) => 
+      new Date(b.assessment_date || b.timestamp) - new Date(a.assessment_date || a.timestamp)
+    );
+    return sorted[0];
+  }, [cdrAssessments]);
+
+  const cdrTrend = useMemo(() => {
+    return evaluateLongitudinalTrend(cdrAssessments);
+  }, [cdrAssessments]);
+
   return (
     <AppContext.Provider
       value={{
@@ -404,6 +431,11 @@ export function AppProvider({ children }) {
         careNotes,
         addCareNote,
         cognitiveScore,
+        // CDR-Inspired Screening
+        cdrAssessments,
+        latestCDRAssessment,
+        cdrTrend,
+        saveCDRAssessment,
         exportBackup,
         importBackup,
         resetToDefaults,

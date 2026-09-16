@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Activity, 
   Sparkles, 
@@ -7,15 +7,60 @@ import {
   Heart, 
   TrendingUp, 
   Info,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle,
+  ClipboardList,
+  PlusCircle,
+  Calendar,
+  History,
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import Disclaimer from '../common/Disclaimer';
+import CognitiveRadarChart from './CognitiveRadarChart';
+import CDRAssessmentModal from './CDRAssessmentModal';
+import { MANDATORY_DISCLAIMER, getObservedLevel } from '../../services/cdrScoringEngine';
 
 export default function CognitiveScoreDashboard() {
-  const { cognitiveScore, t, patient } = useApp();
+  const { 
+    cognitiveScore, 
+    t, 
+    patient, 
+    cdrAssessments, 
+    latestCDRAssessment, 
+    cdrTrend 
+  } = useApp();
 
-  // 7-Day Trend Mock Data
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
+
+  // Active screening data to display (either user-selected from history or latest)
+  const activeAssessment = selectedHistoryItem || latestCDRAssessment || {
+    memory_score: 1.0,
+    orientation_score: 0.5,
+    judgment_score: 1.0,
+    community_score: 0.5,
+    home_hobbies_score: 1.0,
+    personal_care_score: 0.0,
+    total_score: 4.0,
+    observed_level: 'Very mild',
+    assessment_date: '2026-09-14T09:45:00.000Z'
+  };
+
+  const levelInfo = getObservedLevel(activeAssessment.total_score);
+
+  // 6 Domain items for table & card layout
+  const domainItems = [
+    { name: 'Memory', code: 'M', score: activeAssessment.memory_score ?? activeAssessment.memory ?? 0, icon: '🧠', desc: 'Recent recall, appointments & conversations' },
+    { name: 'Orientation', code: 'O', score: activeAssessment.orientation_score ?? activeAssessment.orientation ?? 0, icon: '🧭', desc: 'Awareness of time, place & calendar' },
+    { name: 'Judgment & Problem Solving', code: 'JPS', score: activeAssessment.judgment_score ?? activeAssessment.judgment_problem_solving ?? 0, icon: '⚖️', desc: 'Decisions, safety & daily reasoning' },
+    { name: 'Community Affairs', code: 'CA', score: activeAssessment.community_score ?? activeAssessment.community_affairs ?? 0, icon: '🏘️', desc: 'Shopping, social visits & transport' },
+    { name: 'Home & Hobbies', code: 'HH', score: activeAssessment.home_hobbies_score ?? activeAssessment.home_hobbies ?? 0, icon: '🏡', desc: 'Crafts, chores, music & interests' },
+    { name: 'Personal Care', code: 'PC', score: activeAssessment.personal_care_score ?? activeAssessment.personal_care ?? 0, icon: '🧼', desc: 'Dressing, hygiene & independent meals' }
+  ];
+
+  // 7-Day Trend Mock Data for Daily Engagement Index
   const trendData = [
     { day: 'Mon', score: 78 },
     { day: 'Tue', score: 82 },
@@ -26,11 +71,10 @@ export default function CognitiveScoreDashboard() {
     { day: 'Sun', score: cognitiveScore.overall }
   ];
 
-  // SVG dimensions for trend chart
+  // SVG dimensions for daily engagement chart
   const width = 540;
   const height = 180;
   const padding = 35;
-
   const minScore = 60;
   const maxScore = 100;
 
@@ -48,125 +92,420 @@ export default function CognitiveScoreDashboard() {
 
   return (
     <div>
-      {/* Header */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <h1 style={{ marginBottom: '0.35rem' }}>{t.wellness.title}</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: 0 }}>
-          {t.wellness.subtitle}
-        </p>
-      </div>
-
-      {/* Mandatory Non-Diagnostic Wellness Disclaimer */}
-      <Disclaimer />
-
-      {/* Main Score Hero Card */}
-      <div 
-        className="mira-card mira-card-accent" 
-        style={{
-          marginBottom: '1.75rem',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          padding: '2rem 1.5rem',
-          position: 'relative'
-        }}
-      >
-        <span 
-          className="badge" 
-          style={{
-            backgroundColor: '#fef3c7',
-            color: '#92400e',
-            border: '1px solid #fde68a',
-            marginBottom: '1rem',
-            fontWeight: 700
-          }}
-        >
-          <ShieldCheck size={16} /> {t.wellness.nonDiagBadge}
-        </span>
-
-        {/* Circular Dial Representation */}
-        <div style={{ position: 'relative', width: '160px', height: '160px', marginBottom: '1rem' }}>
-          <svg width="160" height="160" viewBox="0 0 160 160">
-            {/* Background Ring */}
-            <circle
-              cx="80"
-              cy="80"
-              r="68"
-              fill="none"
-              stroke="var(--pink-200)"
-              strokeWidth="12"
-            />
-            {/* Value Ring */}
-            <circle
-              cx="80"
-              cy="80"
-              r="68"
-              fill="none"
-              stroke="var(--wine-700)"
-              strokeWidth="12"
-              strokeDasharray={427}
-              strokeDashoffset={427 - (427 * cognitiveScore.overall) / 100}
-              strokeLinecap="round"
-              transform="rotate(-90 80 80)"
-              style={{ transition: 'stroke-dashoffset 1s ease' }}
-            />
-          </svg>
-
-          {/* Center Text */}
-          <div 
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            <span style={{ fontSize: '2.4rem', fontWeight: 800, color: 'var(--wine-900)', lineHeight: 1 }}>
-              {cognitiveScore.overall}
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-              out of 100
-            </span>
-          </div>
+      {/* Header with New Screening Action */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ marginBottom: '0.35rem', color: 'var(--wine-900)' }}>
+            Cognitive Wellness & Functional Screening
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '1.02rem', margin: 0 }}>
+            CDR-inspired multi-domain functional screening, longitudinal change monitoring & daily cognitive stimulation.
+          </p>
         </div>
 
-        <h3 style={{ fontSize: '1.3rem', color: 'var(--wine-900)', margin: '0 0 0.4rem' }}>
-          {t.wellness.overallIndex}
-        </h3>
-
-        <p style={{ color: 'var(--wine-800)', fontSize: '1rem', maxWidth: '480px', margin: '0 auto 1.25rem' }}>
-          {t.wellness.encouragement}
-        </p>
-
-        {/* Streak Pill */}
-        <div 
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="btn btn-primary"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.5rem',
-            backgroundColor: '#ffffff',
-            padding: '0.5rem 1.2rem',
+            backgroundColor: 'var(--wine-700)',
+            color: '#ffffff',
+            padding: '0.7rem 1.35rem',
+            fontWeight: 700,
             borderRadius: 'var(--radius-full)',
-            boxShadow: 'var(--shadow-sm)',
-            border: '1px solid var(--pink-200)'
+            boxShadow: 'var(--shadow-md)'
           }}
         >
-          <span style={{ fontSize: '1.2rem' }}>🔥</span>
-          <span style={{ fontWeight: 700, color: 'var(--wine-900)' }}>
-            {cognitiveScore.streakDays} {t.wellness.days} {t.wellness.streakDays}
-          </span>
+          <PlusCircle size={18} /> Record New Screening
+        </button>
+      </div>
+
+      {/* Mandatory Non-Diagnostic Screening Disclaimer */}
+      <div 
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.75rem',
+          backgroundColor: '#fffbeb',
+          border: '1px solid #fef3c7',
+          borderRadius: '0.85rem',
+          padding: '0.85rem 1.15rem',
+          marginBottom: '1.5rem',
+          fontSize: '0.86rem',
+          color: '#92400e',
+          lineHeight: 1.45
+        }}
+      >
+        <ShieldCheck size={20} style={{ flexShrink: 0, marginTop: '2px', color: '#d97706' }} />
+        <div>
+          <strong style={{ color: '#78350f' }}>Important Screening Protocol:</strong>{' '}
+          {MANDATORY_DISCLAIMER}
         </div>
       </div>
 
-      {/* Breakdown Metrics Grid */}
-      <h2 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>
-        {t.wellness.breakdown}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* SECTION 1: CDR-INSPIRED SCREENING HERO CARD & SUMMARY                */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div 
+        className="mira-card mira-card-accent" 
+        style={{
+          marginBottom: '2rem',
+          padding: '2rem 1.75rem',
+          position: 'relative',
+          backgroundColor: '#ffffff',
+          border: '1px solid var(--pink-200)',
+          borderRadius: '1.25rem',
+          boxShadow: 'var(--shadow-md)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <span 
+            className="badge" 
+            style={{
+              backgroundColor: '#fef3c7',
+              color: '#92400e',
+              border: '1px solid #fde68a',
+              fontWeight: 700,
+              fontSize: '0.85rem'
+            }}
+          >
+            CDR-Inspired Cognitive Functional Screening
+          </span>
+
+          {activeAssessment.assessment_date && (
+            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Calendar size={15} /> Evaluated on: {new Date(activeAssessment.assessment_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '0.92rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
+              Screening Result (Sum of Boxes)
+            </div>
+            
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--wine-900)', lineHeight: 1 }}>
+                {activeAssessment.total_score.toFixed(1)}
+              </span>
+              <span style={{ fontSize: '1.35rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                / 18
+              </span>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <span style={{ fontSize: '1.05rem', color: 'var(--wine-900)', fontWeight: 600 }}>
+                Observed Level:{' '}
+              </span>
+              <span 
+                className="badge"
+                style={{
+                  backgroundColor: levelInfo.bg,
+                  color: levelInfo.color,
+                  borderColor: levelInfo.border,
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  padding: '0.35rem 0.85rem'
+                }}
+              >
+                {activeAssessment.observed_level} cognitive/functional difficulty
+              </span>
+            </div>
+
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.45, margin: 0 }}>
+              {levelInfo.description}
+            </p>
+          </div>
+
+          {/* Quick Score Range Guide Bar */}
+          <div style={{ backgroundColor: '#f8fafc', padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--wine-900)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
+              Research Reference Ranges
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.82rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
+                <span>0.0</span>
+                <span>No observed difficulty</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0284c7', fontWeight: activeAssessment.total_score > 0 && activeAssessment.total_score <= 4.0 ? 'bold' : 'normal' }}>
+                <span>0.5 – 4.0</span>
+                <span>Very mild difficulty</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#d97706', fontWeight: activeAssessment.total_score >= 4.5 && activeAssessment.total_score <= 9.0 ? 'bold' : 'normal' }}>
+                <span>4.5 – 9.0</span>
+                <span>Mild difficulty</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ea580c', fontWeight: activeAssessment.total_score >= 9.5 && activeAssessment.total_score <= 15.5 ? 'bold' : 'normal' }}>
+                <span>9.5 – 15.5</span>
+                <span>Moderate difficulty</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626', fontWeight: activeAssessment.total_score >= 16.0 ? 'bold' : 'normal' }}>
+                <span>16.0 – 18.0</span>
+                <span>Severe difficulty</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* SECTION 2: 6-DOMAIN DASHBOARD REPRESENTATION & RADAR CHART          */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        {/* Left: 6-Domain Score Breakdown */}
+        <div className="mira-card" style={{ padding: '1.5rem' }}>
+          <h2 style={{ fontSize: '1.25rem', color: 'var(--wine-900)', margin: '0 0 0.4rem' }}>
+            Domain Assessment Breakdown
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 1.25rem' }}>
+            Sum of individual scores across the 6 cognitive and functional domains (0 to 3 each).
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+            {domainItems.map((item) => (
+              <div 
+                key={item.code}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: '0.75rem',
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #f1f5f9'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <span style={{ fontSize: '1.3rem' }}>{item.icon}</span>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--wine-900)' }}>
+                      {item.name}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      {item.desc}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right' }}>
+                  <span 
+                    style={{
+                      fontSize: '0.95rem',
+                      fontWeight: 800,
+                      color: item.score === 0 ? '#16a34a' : item.score <= 1.0 ? '#0284c7' : '#dc2626',
+                      backgroundColor: '#ffffff',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: 'var(--radius-full)',
+                      border: '1px solid #e2e8f0',
+                      display: 'inline-block'
+                    }}
+                  >
+                    {item.score.toFixed(1)} / 3
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Summation Footer Table Box */}
+          <div 
+            style={{
+              marginTop: '1.25rem',
+              paddingTop: '1rem',
+              borderTop: '2px dashed var(--pink-200)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>OVERALL SCORE</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--wine-900)' }}>
+                {activeAssessment.total_score.toFixed(1)} / 18
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>OBSERVED LEVEL</div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: levelInfo.color }}>
+                {activeAssessment.observed_level}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Radar Chart Visualization */}
+        <div className="mira-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '100%', marginBottom: '0.75rem' }}>
+            <h2 style={{ fontSize: '1.25rem', color: 'var(--wine-900)', margin: '0 0 0.35rem' }}>
+              Cognitive Profile (Radar View)
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+              Multi-axial radar map illustrating functional balance and areas for memory support.
+            </p>
+          </div>
+
+          <CognitiveRadarChart assessment={activeAssessment} size={300} />
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* SECTION 3: LONGITUDINAL MONITORING & CHANGE TRACKING               */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div className="mira-card" style={{ padding: '1.75rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <History size={20} color="var(--wine-700)" />
+              <h2 style={{ fontSize: '1.25rem', color: 'var(--wine-900)', margin: 0 }}>
+                Longitudinal Monitoring & Trends
+              </h2>
+            </div>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+              Tracking cognitive and functional changes over time across recorded intervals.
+            </p>
+          </div>
+
+          {/* Trend Status Pill */}
+          <div 
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              backgroundColor: '#f8fafc',
+              border: `1.5px solid ${cdrTrend.color}`,
+              color: cdrTrend.color,
+              padding: '0.45rem 1rem',
+              borderRadius: 'var(--radius-full)',
+              fontWeight: 700,
+              fontSize: '0.88rem'
+            }}
+          >
+            <TrendingUp size={16} />
+            Trend: {cdrTrend.status}
+          </div>
+        </div>
+
+        {/* Trend Summary Description Box */}
+        <div 
+          style={{
+            backgroundColor: '#f1f5f9',
+            padding: '0.85rem 1.15rem',
+            borderRadius: '0.75rem',
+            marginBottom: '1.5rem',
+            fontSize: '0.88rem',
+            color: '#334155'
+          }}
+        >
+          <strong>Observation Summary:</strong> {cdrTrend.summary}
+        </div>
+
+        {/* Month over Month Progression Bar Chart */}
+        <div style={{ marginBottom: '1.75rem' }}>
+          <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--wine-900)', marginBottom: '0.75rem' }}>
+            Score Progression Over Recorded Screenings
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(4, cdrAssessments.length)}, 1fr)`, gap: '0.75rem' }}>
+            {cdrAssessments.map((item, idx) => {
+              const isCurrent = activeAssessment.id === item.id;
+              const dateLabel = item.month_label || new Date(item.assessment_date).toLocaleString('default', { month: 'short' });
+              return (
+                <div 
+                  key={item.id || idx}
+                  onClick={() => setSelectedHistoryItem(item)}
+                  style={{
+                    backgroundColor: isCurrent ? '#fff1f2' : '#f8fafc',
+                    border: isCurrent ? '2px solid var(--wine-700)' : '1px solid #e2e8f0',
+                    borderRadius: '0.75rem',
+                    padding: '0.85rem 0.65rem',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.35rem' }}>
+                    {dateLabel}
+                  </div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--wine-900)' }}>
+                    {item.total_score.toFixed(1)}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    {item.observed_level}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Historical Table */}
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.86rem' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--wine-900)' }}>Date</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--wine-900)' }}>Assessor</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--wine-900)' }}>Scores (M / O / JPS / CA / HH / PC)</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--wine-900)' }}>Sum of Boxes</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--wine-900)' }}>Observed Level</th>
+                <th style={{ padding: '0.75rem 1rem', color: 'var(--wine-900)' }}>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cdrAssessments.map((item, idx) => {
+                const isSelected = activeAssessment.id === item.id;
+                return (
+                  <tr 
+                    key={item.id || idx}
+                    onClick={() => setSelectedHistoryItem(item)}
+                    style={{
+                      borderBottom: '1px solid #f1f5f9',
+                      backgroundColor: isSelected ? '#fff1f2' : 'transparent',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>
+                      {new Date(item.assessment_date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)' }}>
+                      {item.assessor || 'Caregiver'}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                      {item.memory_score.toFixed(1)} / {item.orientation_score.toFixed(1)} / {item.judgment_score.toFixed(1)} / {item.community_score.toFixed(1)} / {item.home_hobbies_score.toFixed(1)} / {item.personal_care_score.toFixed(1)}
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--wine-900)' }}>
+                      {item.total_score.toFixed(1)} / 18
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem' }}>
+                      <span 
+                        className="badge" 
+                        style={{
+                          fontSize: '0.78rem',
+                          backgroundColor: '#f1f5f9',
+                          color: '#334155'
+                        }}
+                      >
+                        {item.observed_level}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', fontSize: '0.82rem', maxWidth: '240px' }}>
+                      {item.notes || '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* SECTION 4: DAILY ENGAGEMENT ACTIVITY (Routine & Memory Stimulation) */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <h2 style={{ fontSize: '1.25rem', color: 'var(--wine-900)', marginBottom: '1rem' }}>
+        Daily Engagement & Activity Index
       </h2>
 
       <div className="grid-3" style={{ marginBottom: '2rem' }}>
@@ -219,86 +558,11 @@ export default function CognitiveScoreDashboard() {
         </div>
       </div>
 
-      {/* Trend Curve Chart */}
-      <div className="mira-card" style={{ padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div>
-            <h3 style={{ fontSize: '1.15rem', color: 'var(--wine-900)', margin: '0 0 0.2rem' }}>
-              {t.wellness.trend7Days}
-            </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
-              Visualizing daily engagement and cognitive stimulation consistency.
-            </p>
-          </div>
-          <span className="badge badge-wine" style={{ fontSize: '0.8rem' }}>
-            <TrendingUp size={14} /> +6% this week
-          </span>
-        </div>
-
-        {/* SVG Line & Area Chart */}
-        <div style={{ width: '100%', overflowX: 'auto' }}>
-          <svg 
-            viewBox={`0 0 ${width} ${height}`} 
-            style={{ width: '100%', maxHeight: '200px', display: 'block' }}
-          >
-            <defs>
-              <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#fbc6d5" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-
-            {/* Grid horizontal lines */}
-            {[70, 80, 90, 100].map((val) => {
-              const y = height - padding - ((val - minScore) / (maxScore - minScore)) * (height - 2 * padding);
-              return (
-                <g key={val}>
-                  <line 
-                    x1={padding} 
-                    y1={y} 
-                    x2={width - padding} 
-                    y2={y} 
-                    stroke="var(--ivory-border)" 
-                    strokeDasharray="4 4" 
-                  />
-                  <text 
-                    x={padding - 8} 
-                    y={y + 4} 
-                    fontSize="10" 
-                    fill="#9ca3af" 
-                    textAnchor="end"
-                  >
-                    {val}
-                  </text>
-                </g>
-              );
-            })}
-
-            {/* Area Fill */}
-            <path d={areaD} fill="url(#trendGrad)" />
-
-            {/* Line */}
-            <path d={pathD} fill="none" stroke="var(--wine-700)" strokeWidth="3" strokeLinecap="round" />
-
-            {/* Data Points */}
-            {points.map((p, i) => (
-              <g key={i}>
-                <circle cx={p.x} cy={p.y} r="5" fill="#ffffff" stroke="var(--wine-700)" strokeWidth="3" />
-                <text 
-                  x={p.x} 
-                  y={height - 10} 
-                  fontSize="12" 
-                  fill="var(--text-muted)" 
-                  textAnchor="middle"
-                  fontWeight={i === points.length - 1 ? 'bold' : 'normal'}
-                >
-                  {p.day}
-                </text>
-              </g>
-            ))}
-          </svg>
-        </div>
-      </div>
+      {/* Modal for Recording New Screening */}
+      <CDRAssessmentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
