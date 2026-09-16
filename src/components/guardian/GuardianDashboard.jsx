@@ -180,7 +180,7 @@ export default function GuardianDashboard() {
             className="btn-primary"
             style={{ textDecoration: 'none' }}
           >
-            <Phone size={18} /> Call Doctor / ICE
+            <Phone size={18} /> {t.guardian?.callDoctor || 'Call Doctor / ICE'}
           </a>
         </div>
       </div>
@@ -212,10 +212,10 @@ export default function GuardianDashboard() {
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-main)' }}>
-                Offline-First Data & Synchronization Hub
+                {t.guardian?.offlineHubTitle || 'Offline-First Data & Synchronization Hub'}
               </h3>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Guaranteed zero progress loss in low-connectivity North Eastern regions
+                {t.guardian?.offlineHubDesc || 'Guaranteed zero progress loss in low-connectivity North Eastern regions'}
               </p>
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function GuardianDashboard() {
               style={{ padding: '0.5rem 0.85rem', fontSize: '0.85rem' }}
               title="Pre-cache cognitive activities and language assets for offline use"
             >
-              <Download size={16} /> {isRefreshingContent ? 'Downloading…' : 'Download Offline Content'}
+              <Download size={16} /> {isRefreshingContent ? (t.guardian?.downloading || 'Downloading…') : (t.guardian?.downloadOffline || 'Download Offline Content')}
             </button>
 
             <button
@@ -245,21 +245,20 @@ export default function GuardianDashboard() {
                 setSyncFeedback(null);
                 const res = await syncNow();
                 setIsSyncingManual(false);
-                if (res?.success) {
-                  setSyncFeedback('All patient progress safely synchronized with cloud vault.');
+                if (res.success) {
+                  setSyncFeedback(`Sync complete: ${res.synced} items synchronized to central server.`);
                   audioService.playSuccessChime();
                 } else {
-                  setSyncFeedback('Offline mode active. Progress is saved locally and will sync when reconnected.');
-                  audioService.playSoftClick();
+                  setSyncFeedback(`Sync deferred: stored locally in offline queue.`);
                 }
                 setTimeout(() => setSyncFeedback(null), 4000);
               }}
               disabled={isSyncingManual}
               className="btn-primary"
-              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', backgroundColor: 'var(--wine-700)' }}
+              style={{ padding: '0.5rem 0.85rem', fontSize: '0.85rem' }}
+              title="Manually trigger immediate synchronization with PostgreSQL backend"
             >
-              <RefreshCw size={16} className={isSyncingManual ? 'spin-icon' : ''} />
-              {isSyncingManual ? 'Syncing…' : 'Sync Now'}
+              <CloudUpload size={16} /> {isSyncingManual ? (t.guardian?.syncing || 'Syncing…') : (t.guardian?.syncNow || 'Sync to Cloud Now')}
             </button>
           </div>
         </div>

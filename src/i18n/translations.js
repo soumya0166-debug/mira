@@ -208,7 +208,22 @@ export const translations = {
       addNote: 'Add Note',
       exportBackup: 'Export Data Backup',
       importBackup: 'Restore Backup',
-      resetData: 'Reset Demo Data'
+      resetData: 'Reset Demo Data',
+      callDoctor: 'Call Doctor / ICE',
+      offlineHubTitle: 'Offline-First Data & Synchronization Hub',
+      offlineHubDesc: 'Guaranteed zero progress loss in low-connectivity North Eastern regions',
+      downloadOffline: 'Download Offline Content',
+      downloading: 'Downloading…',
+      syncNow: 'Sync to Cloud Now',
+      syncing: 'Syncing…',
+      connection: 'Connection',
+      online: 'Online',
+      offline: 'Offline',
+      lastSync: 'Last Sync',
+      pendingSync: 'Pending Sync',
+      offlineContent: 'Offline Content',
+      localStorage: 'Local Storage',
+      backupTitle: 'Data Backup & Restore'
     },
     progress: {
       title: 'Cognitive Engagement & Activity',
