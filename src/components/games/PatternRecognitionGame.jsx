@@ -1,51 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Brain, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { RotateCcw, Brain, Sparkles, CheckCircle2, ArrowRight, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../../context/AppContext';
 import { adaptiveEngine } from '../../services/adaptiveEngine';
-
-// Handloom Weave Motifs of North East
-const WEAVE_PATTERNS = [
-  {
-    id: 'gamosa',
-    title: 'Assamese Gamosa Border',
-    state: 'Assam',
-    description: 'Floral Kingkhap motif alternating in crimson and white.',
-    sequence: ['🌺', '💠', '🌺', '💠', '🌺'],
-    options: ['💠', '🍃', '⭐', '🥁'],
-    correct: '💠'
-  },
-  {
-    id: 'phanek',
-    title: 'Manipuri Phanek Stripe',
-    state: 'Manipur',
-    description: 'Meitei traditional border sequence.',
-    sequence: ['🟩', '🟨', '🟩', '🟨', '🟩'],
-    options: ['🟨', '🟦', '⬛', '🟥'],
-    correct: '🟨'
-  },
-  {
-    id: 'mizo_puan',
-    title: 'Mizo Puanchei Geometry',
-    state: 'Mizoram',
-    description: 'Celebrated festival attire geometric diamond weave.',
-    sequence: ['🔺', '🔹', '🔺', '🔹', '🔺'],
-    options: ['🔹', '🔸', '🟢', '🔺'],
-    correct: '🔹'
-  },
-  {
-    id: 'khasi_jainsem',
-    title: 'Khasi Jainsem Motif',
-    state: 'Meghalaya',
-    description: 'Natural mountain orchid sequence on silk.',
-    sequence: ['🌸', '🍃', '🌸', '🍃', '🌸'],
-    options: ['🍃', '🍂', '🌾', '🌸'],
-    correct: '🍃'
-  }
-];
+import audioService from '../../services/audioService';
+import SpeakButton from '../common/SpeakButton';
+import { getGameContent } from '../../i18n/gameTranslations';
 
 export default function PatternRecognitionGame({ onNextActivity }) {
-  const { t, activeUserId } = useApp();
+  const { t, activeUserId, language, voiceEnabled } = useApp();
   const [difficulty, setDifficulty] = useState('easy');
   const [currentPatternIndex, setCurrentPatternIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -54,6 +17,8 @@ export default function PatternRecognitionGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
+
+  const patterns = getGameContent('pattern-recognition', language) || [];
 
   const startNewGame = (diff = difficulty) => {
     setDifficulty(diff);
@@ -68,12 +33,23 @@ export default function PatternRecognitionGame({ onNextActivity }) {
 
   useEffect(() => {
     startNewGame(difficulty);
-  }, []);
+  }, [language]);
 
-  const currentPattern = WEAVE_PATTERNS[currentPatternIndex];
+  const currentPattern = patterns[currentPatternIndex] || patterns[0];
+
+  // Auto-announce pattern prompt
+  useEffect(() => {
+    if (currentPattern && voiceEnabled && !isCompleted) {
+      const prompt = `${currentPattern.title}. ${currentPattern.description}. Which symbol completes the pattern?`;
+      const timer = setTimeout(() => {
+        audioService.speakText(prompt, language);
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [currentPatternIndex, language, isCompleted, voiceEnabled]);
 
   const handleSelectOption = (option) => {
-    if (selectedOption !== null) return;
+    if (selectedOption !== null || !currentPattern) return;
 
     setSelectedOption(option);
     const correct = option === currentPattern.correct;
@@ -81,17 +57,26 @@ export default function PatternRecognitionGame({ onNextActivity }) {
 
     if (correct) {
       setScore(s => s + 25);
+      audioService.playSuccessChime();
+      if (voiceEnabled) {
+        audioService.speakText('Correct pattern match! Wonderful.', language);
+      }
+    } else {
+      audioService.playSoftClick();
+      if (voiceEnabled) {
+        audioService.speakText('Good try. Let us see the next pattern.', language);
+      }
     }
 
     setTimeout(() => {
-      if (currentPatternIndex + 1 < WEAVE_PATTERNS.length) {
+      if (currentPatternIndex + 1 < patterns.length) {
         setCurrentPatternIndex(idx => idx + 1);
         setSelectedOption(null);
         setIsCorrect(null);
       } else {
         finishGame(correct ? score + 25 : score);
       }
-    }, 1200);
+    }, 1400);
   };
 
   const finishGame = async (finalScore) => {
@@ -103,6 +88,10 @@ export default function PatternRecognitionGame({ onNextActivity }) {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
     } catch {}
 
+    if (voiceEnabled) {
+      audioService.speakText('Outstanding! You completed all handloom weave patterns.', language);
+    }
+
     const result = await adaptiveEngine.recordGameSession({
       userId: activeUserId || 'usr-radha-1',
       gameId: 'pattern-recognition',
@@ -111,7 +100,7 @@ export default function PatternRecognitionGame({ onNextActivity }) {
       score: finalScore,
       accuracy,
       durationSeconds,
-      moves: WEAVE_PATTERNS.length
+      moves: patterns.length
     });
 
     if (result && result.recommendation) {
@@ -160,7 +149,7 @@ export default function PatternRecognitionGame({ onNextActivity }) {
         </div>
 
         <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between' }}>
-          <span>Pattern <strong>{currentPatternIndex + 1}</strong> of {WEAVE_PATTERNS.length}</span>
+          <span>Pattern <strong>{currentPatternIndex + 1}</strong> of {patterns.length}</span>
           <span>Score: <strong>{score}</strong></span>
         </div>
       </div>
@@ -168,10 +157,19 @@ export default function PatternRecognitionGame({ onNextActivity }) {
       {!isCompleted && currentPattern && (
         <div className="mira-card" style={{ padding: '2rem', textAlign: 'center' }}>
           <div style={{ marginBottom: '1rem' }}>
-            <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700 }}>
-              {currentPattern.state} • {currentPattern.title}
-            </span>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+              <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '0.35rem 0.9rem', borderRadius: '12px', fontSize: '0.9rem', fontWeight: 700 }}>
+                {currentPattern.state} • {currentPattern.title}
+              </span>
+              <SpeakButton
+                text={`${currentPattern.title}. ${currentPattern.description}. Which symbol naturally completes the weave sequence?`}
+                lang={language}
+                variant="icon"
+                size={18}
+                title="Hear pattern description"
+              />
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginTop: '0.5rem' }}>
               {currentPattern.description}
             </p>
           </div>

@@ -1,15 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Brain, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { RotateCcw, Brain, Sparkles, CheckCircle2, ArrowRight, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../../context/AppContext';
 import { adaptiveEngine } from '../../services/adaptiveEngine';
+import audioService from '../../services/audioService';
+import SpeakButton from '../common/SpeakButton';
+
+const THEMES_BY_LANG = {
+  en: [
+    { target: '🦏', distractor: '🐃', targetName: 'Kaziranga One-Horned Rhino', distractorName: 'Wild Buffalo' },
+    { target: '🪶', distractor: '🍃', targetName: 'Hornbill Golden Feather', distractorName: 'Forest Leaf' },
+    { target: '🌸', distractor: '🌿', targetName: 'Blue Vanda Wild Orchid', distractorName: 'River Grass' }
+  ],
+  as: [
+    { target: '🦏', distractor: '🐃', targetName: 'কাজিৰঙাৰ এশিঙীয়া গঁড়', distractorName: 'বনৰীয়া ম’হ' },
+    { target: '🪶', distractor: '🍃', targetName: 'ধনেশৰ সোণালী পাখি', distractorName: 'বনৰীয়া পাত' },
+    { target: '🌸', distractor: '🌿', targetName: 'কপৌ ফুল / বনফুল', distractorName: 'নদীৰ ঘাঁহ' }
+  ],
+  bn: [
+    { target: '🦏', distractor: '🐃', targetName: 'কাজিরাঙার একশৃঙ্গ গণ্ডার', distractorName: 'বুনো মহিষ' },
+    { target: '🪶', distractor: '🍃', targetName: 'ধনেশের সোনালী পালক', distractorName: 'অরণ্যের পাতা' },
+    { target: '🌸', distractor: '🌿', targetName: 'নীল বন্য অর্কিড', distractorName: 'নদী তীরের ঘাস' }
+  ]
+};
 
 export default function AttentionChallengeGame({ onNextActivity }) {
-  const { t, activeUserId } = useApp();
+  const { t, activeUserId, language, voiceEnabled } = useApp();
   const [difficulty, setDifficulty] = useState('easy'); // easy: 6 tiles (2x3), medium: 12 tiles (3x4), hard: 16 tiles (4x4)
   const [grid, setGrid] = useState([]);
-  const [targetSymbol, setTargetSymbol] = useState('🪶'); // Great Hornbill feather
-  const [distractorSymbol, setDistractorSymbol] = useState('🍃'); // Forest leaves
+  const [targetSymbol, setTargetSymbol] = useState('🪶');
+  const [distractorSymbol, setDistractorSymbol] = useState('🍃');
+  const [targetName, setTargetName] = useState('Hornbill Golden Feather');
   const [roundsPlayed, setRoundsPlayed] = useState(0);
   const [score, setScore] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -17,6 +38,8 @@ export default function AttentionChallengeGame({ onNextActivity }) {
   const [startTime, setStartTime] = useState(null);
 
   const ROUNDS_PER_GAME = 3;
+
+  const themes = THEMES_BY_LANG[language] || THEMES_BY_LANG.en;
 
   const getGridSize = (diff = difficulty) => {
     if (diff === 'easy') return 6;
@@ -28,15 +51,10 @@ export default function AttentionChallengeGame({ onNextActivity }) {
     const totalTiles = getGridSize(diff);
     const targetIndex = Math.floor(Math.random() * totalTiles);
 
-    const themePairs = [
-      { target: '🦏', distractor: '🐃', targetName: 'Kaziranga One-Horned Rhino', distractorName: 'Wild Buffalo' },
-      { target: '🪶', distractor: '🍃', targetName: 'Hornbill Golden Feather', distractorName: 'Forest Leaf' },
-      { target: '🌸', distractor: '🌿', targetName: 'Blue Vanda Wild Orchid', distractorName: 'River Grass' }
-    ];
-
-    const currentTheme = themePairs[roundNum % themePairs.length];
+    const currentTheme = themes[roundNum % themes.length];
     setTargetSymbol(currentTheme.target);
     setDistractorSymbol(currentTheme.distractor);
+    setTargetName(currentTheme.targetName);
 
     const newGrid = [];
     for (let i = 0; i < totalTiles; i++) {
@@ -49,6 +67,10 @@ export default function AttentionChallengeGame({ onNextActivity }) {
     }
 
     setGrid(newGrid);
+
+    if (voiceEnabled) {
+      audioService.speakText(`Find the single ${currentTheme.targetName} among the others.`, language);
+    }
   };
 
   const startNewGame = (diff = difficulty) => {
@@ -63,10 +85,15 @@ export default function AttentionChallengeGame({ onNextActivity }) {
 
   useEffect(() => {
     startNewGame(difficulty);
-  }, []);
+  }, [language]);
 
   const handleTileClick = (tile) => {
     if (tile.isTarget) {
+      audioService.playSuccessChime();
+      if (voiceEnabled) {
+        audioService.speakText('Splendid! You found it.', language);
+      }
+
       const nextRounds = roundsPlayed + 1;
       const nextScore = score + 33;
       setScore(nextScore);
@@ -75,8 +102,12 @@ export default function AttentionChallengeGame({ onNextActivity }) {
       if (nextRounds >= ROUNDS_PER_GAME) {
         finishGame(nextScore);
       } else {
-        startNewRound(difficulty, nextRounds);
+        setTimeout(() => {
+          startNewRound(difficulty, nextRounds);
+        }, 1000);
       }
+    } else {
+      audioService.playSoftClick();
     }
   };
 
@@ -88,6 +119,10 @@ export default function AttentionChallengeGame({ onNextActivity }) {
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
     } catch {}
+
+    if (voiceEnabled) {
+      audioService.speakText('Activity complete! You have sharp and peaceful visual attention.', language);
+    }
 
     const result = await adaptiveEngine.recordGameSession({
       userId: activeUserId || 'usr-radha-1',
@@ -113,10 +148,19 @@ export default function AttentionChallengeGame({ onNextActivity }) {
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-teal)', fontWeight: 700 }}>
               Game 5 of 8 • Visual Focus & Attention
             </span>
-            <h2 style={{ margin: '0.25rem 0 0.5rem', color: 'var(--text-main)' }}>
-              {t.games?.game5Title || 'Nature Attention Challenge'}
-            </h2>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-main)' }}>
+                {t.games?.game5Title || 'Nature Attention Challenge'}
+              </h2>
+              <SpeakButton
+                text={`${t.games?.game5Title || 'Nature Attention Challenge'}. Find the single ${targetName} among the others.`}
+                lang={language}
+                variant="icon"
+                size={18}
+                title="Hear instructions"
+              />
+            </div>
+            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
               {t.games?.game5Desc || 'Gently locate the special North Eastern treasure in the peaceful forest setting.'}
             </p>
           </div>

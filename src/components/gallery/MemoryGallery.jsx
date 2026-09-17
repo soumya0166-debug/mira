@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import MemoryCard from './MemoryCard';
 import AddMemoryModal from './AddMemoryModal';
 import ReminiscenceSlideshow from './ReminiscenceSlideshow';
+import SpeakButton from '../common/SpeakButton';
 
 export default function MemoryGallery() {
   const { memories, addMemory, addReaction, mode, t } = useApp();
@@ -44,7 +45,13 @@ export default function MemoryGallery() {
         </div>
 
         {/* Primary action buttons */}
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <SpeakButton 
+            text={`${t.gallery.title}. ${t.gallery.subtitle}. You have ${memories.length} memories saved.`} 
+            label="Listen to Memories" 
+            variant="senior" 
+          />
+
           {memories.length > 0 && (
             <button 
               onClick={() => handleStartSlideshow(0)}
@@ -55,7 +62,7 @@ export default function MemoryGallery() {
           )}
 
           <button 
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => setIsAddModalOpen(true)} 
             className="btn-primary"
           >
             <Plus size={18} /> {t.gallery.addMemory}

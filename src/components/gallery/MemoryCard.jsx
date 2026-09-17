@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import audioService from '../../services/audioService';
 
 export default function MemoryCard({ memory, onOpenSlideshow }) {
-  const { mode, addReaction, deleteMemory, t } = useApp();
+  const { mode, addReaction, deleteMemory, t, language } = useApp();
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioRef = useRef(null);
 
@@ -26,10 +26,11 @@ export default function MemoryCard({ memory, onOpenSlideshow }) {
         setIsPlayingAudio(true);
       }
     } else {
-      // Play soothing harmonic reminder chime
+      // Read memory title and story aloud in active language so non-reading elders understand
       setIsPlayingAudio(true);
-      audioService.playReminderChime();
-      setTimeout(() => setIsPlayingAudio(false), 2400);
+      const memoryText = `${memory.title}. ${memory.year ? `From ${memory.year}.` : ''} ${memory.story} ${memory.questionPrompt ? `Remember: ${memory.questionPrompt}` : ''}`;
+      audioService.speak(memoryText, language);
+      setTimeout(() => setIsPlayingAudio(false), 2500);
     }
   };
 

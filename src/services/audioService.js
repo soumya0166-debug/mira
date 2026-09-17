@@ -1,7 +1,7 @@
 /**
- * Audio & Speech Service for MIND AI - NER
- * Combines Web Audio chimes with Web Speech API (Synthesis & Recognition).
- * Supports elderly-paced speech synthesis (0.85x - 0.9x speed) and voice input.
+ * Enhanced Audio & Voice Service for MIND AI - NER
+ * Provides acoustic chimes and senior-friendly multilingual Speech Synthesis & Recognition.
+ * Includes voice detection, regional accent fallback, and auto-voice assistance.
  */
 
 class AudioService {
@@ -9,6 +9,24 @@ class AudioService {
     this.ctx = null;
     this.recognition = null;
     this.isListening = false;
+    this.isSpeaking = false;
+    this.voices = [];
+    this.autoVoiceEnabled = true;
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      this.loadVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = () => this.loadVoices();
+      }
+    }
+  }
+
+  loadVoices() {
+    try {
+      this.voices = window.speechSynthesis.getVoices() || [];
+    } catch (e) {
+      this.voices = [];
+    }
   }
 
   getAudioContext() {
@@ -148,30 +166,78 @@ class AudioService {
   }
 
   /**
-   * Web Speech API - Text to Speech
-   * Elderly-friendly slower pacing and gentle pitch
+   * Resolve best available TTS Voice for the requested language code
+   */
+  getBestVoiceForLanguage(langCode) {
+    if (!this.voices || this.voices.length === 0) {
+      this.loadVoices();
+    }
+
+    // Mapping regional NER languages to phonetic target voices
+    const targetLocales = {
+      as: ['as-IN', 'bn-IN', 'hi-IN', 'en-IN'],
+      bn: ['bn-IN', 'hi-IN', 'en-IN'],
+      brx: ['hi-IN', 'en-IN'],
+      mni: ['hi-IN', 'bn-IN', 'en-IN'],
+      kha: ['en-IN', 'hi-IN'],
+      lus: ['en-IN', 'hi-IN'],
+      grt: ['en-IN', 'hi-IN'],
+      trp: ['bn-IN', 'hi-IN', 'en-IN'],
+      nag: ['en-IN', 'hi-IN'],
+      en: ['en-IN', 'en-GB', 'en-US']
+    };
+
+    const candidates = targetLocales[langCode] || ['en-IN', 'en-US'];
+
+    for (const locale of candidates) {
+      const match = this.voices.find(v => v.lang === locale || v.lang.startsWith(locale.split('-')[0]));
+      if (match) return match;
+    }
+
+    // Default fallback to first voice with Indian or English accent
+    return this.voices.find(v => v.lang.includes('IN')) || this.voices[0] || null;
+  }
+
+  /**
+   * Web Speech API - Text to Speech with Elderly Pace & Tone
    */
   speakText(text, lang = 'en', onStart, onEnd) {
-    if (!('speechSynthesis' in window) || !text) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window) || !text) return;
 
-    window.speechSynthesis.cancel(); // Stop any pending speech
+    // Remove any special emoji / HTML before speaking for clean audio
+    const cleanText = text
+      .replace(/[\u{1F600}-\u{1F64F}|\u{1F300}-\u{1F5FF}|\u{1F680}-\u{1F6FF}|\u{1F1E0}-\u{1F1FF}|\u{2600}-\u{26FF}|\u{2700}-\u{27BF}]/gu, '')
+      .replace(/[•*#]/g, ' ')
+      .trim();
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.88; // Gentle, clear slower pace
-    utterance.pitch = 1.05;
+    if (!cleanText) return;
 
-    // Match language tag
-    const langMap = {
-      as: 'as-IN',
-      bn: 'bn-IN',
-      hi: 'hi-IN',
-      en: 'en-IN'
+    window.speechSynthesis.cancel(); // Cancel previous utterances to avoid overlapping
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 0.85; // Calming, slower elderly pace
+    utterance.pitch = 1.05; // Friendly, warm pitch
+
+    const voice = this.getBestVoiceForLanguage(lang);
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = lang === 'en' ? 'en-IN' : (lang === 'bn' || lang === 'as' ? 'bn-IN' : 'hi-IN');
+    }
+
+    utterance.onstart = () => {
+      this.isSpeaking = true;
+      if (onStart) onStart();
     };
-    utterance.lang = langMap[lang] || 'en-IN';
 
-    if (onStart) utterance.onstart = onStart;
-    if (onEnd) utterance.onend = onEnd;
-    utterance.onerror = () => {
+    utterance.onend = () => {
+      this.isSpeaking = false;
+      if (onEnd) onEnd();
+    };
+
+    utterance.onerror = (e) => {
+      this.isSpeaking = false;
       if (onEnd) onEnd();
     };
 
@@ -179,8 +245,9 @@ class AudioService {
   }
 
   stopSpeaking() {
-    if ('speechSynthesis' in window) {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
+      this.isSpeaking = false;
     }
   }
 
@@ -200,10 +267,17 @@ class AudioService {
       this.recognition.interimResults = false;
 
       const langMap = {
-        as: 'as-IN',
+        as: 'bn-IN', // Bengali-Assamese phonetic model
         bn: 'bn-IN',
         hi: 'hi-IN',
-        en: 'en-IN'
+        en: 'en-IN',
+        brx: 'hi-IN',
+        nag: 'en-IN',
+        kha: 'en-IN',
+        lus: 'en-IN',
+        grt: 'en-IN',
+        trp: 'bn-IN',
+        mni: 'hi-IN'
       };
       this.recognition.lang = langMap[lang] || 'en-IN';
 

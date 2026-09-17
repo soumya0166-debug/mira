@@ -2,9 +2,11 @@ import React from 'react';
 import { Play, ArrowRight, Heart, Sparkles, Clock, CheckCircle2, Brain, Mic, ShieldAlert } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ALL_GAMES } from '../games/GamesHub';
+import SpeakButton from '../common/SpeakButton';
+import { getGameMetadata } from '../../i18n/gameTranslations';
 
 export default function HomeDashboard({ onNavigateTab, onSelectGame }) {
-  const { t, patient, memories, routines, gameSessions, preferredLanguage, isOnline, offlineActivitiesCount, pendingCount } = useApp();
+  const { t, patient, memories, routines, gameSessions, language, isOnline, offlineActivitiesCount, pendingCount } = useApp();
 
   // Gentle greeting based on time of day
   const hour = new Date().getHours();
@@ -16,6 +18,10 @@ export default function HomeDashboard({ onNavigateTab, onSelectGame }) {
 
   // Recommended activity for today
   const recommendedGame = ALL_GAMES[0]; // Heritage Memory Match
+  const recMeta = getGameMetadata(recommendedGame.id, language) || {
+    title: t.games?.game1Title || recommendedGame.title,
+    desc: t.games?.game1Desc || recommendedGame.desc
+  };
 
   // Today's Routine summary
   const nextRoutine = routines?.find(r => !r.completedToday) || routines?.[0];
@@ -69,14 +75,21 @@ export default function HomeDashboard({ onNavigateTab, onSelectGame }) {
         </span>
       </div>
 
-      {/* 2. Warm Elderly Greeting */}
-      <div style={{ marginBottom: '1.75rem', textAlign: 'left' }}>
-        <h1 style={{ margin: '0 0 0.35rem', color: 'var(--text-main)', fontSize: '2.2rem', fontWeight: 800 }}>
-          {greetingTime} {patientName} 🌸
-        </h1>
-        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '1.15rem' }}>
-          {t.home?.greetingSubtitle || 'Today is peaceful and serene. How would you like to spend your morning?'}
-        </p>
+      {/* 2. Warm Elderly Greeting with Audio Summary */}
+      <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h1 style={{ margin: '0 0 0.35rem', color: 'var(--text-main)', fontSize: '2.2rem', fontWeight: 800 }}>
+            {greetingTime} {patientName} 🌸
+          </h1>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '1.15rem' }}>
+            {t.home?.greetingSubtitle || 'Today is peaceful and serene. How would you like to spend your morning?'}
+          </p>
+        </div>
+        <SpeakButton 
+          text={`${greetingTime} ${patientName}. ${t.home?.greetingSubtitle || ''}. ${t.home?.todayRecommendation || "Today's activity"}: ${recMeta.title}. ${nextRoutine ? (nextRoutine.title + ' at ' + nextRoutine.time) : ''}`} 
+          label="Listen to Today's Summary" 
+          variant="senior"
+        />
       </div>
 
       {/* 3. Today's Recommended Activity Card with "Start Today's Activity" */}
@@ -93,24 +106,27 @@ export default function HomeDashboard({ onNavigateTab, onSelectGame }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
           <div>
-            <span
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.2)',
-                padding: '0.3rem 0.8rem',
-                borderRadius: '14px',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase'
-              }}
-            >
-              {t.home?.todayRecommendation || "Today's Recommended Activity"}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <span
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  padding: '0.3rem 0.8rem',
+                  borderRadius: '14px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase'
+                }}
+              >
+                {t.home?.todayRecommendation || "Today's Recommended Activity"}
+              </span>
+              <SpeakButton text={`${recMeta.title}. ${recMeta.desc}`} variant="pill" label="Listen" />
+            </div>
             <h2 style={{ margin: '0.5rem 0 0.35rem', fontSize: '1.75rem', color: '#ffffff' }}>
-              {t.games?.game1Title || recommendedGame.title}
+              {recMeta.title}
             </h2>
             <p style={{ margin: 0, fontSize: '1rem', color: '#e2e8f0', maxWidth: '500px' }}>
-              {t.games?.game1Desc || recommendedGame.desc}
+              {recMeta.desc}
             </p>
           </div>
           <span style={{ fontSize: '3.5rem' }}>{recommendedGame.icon}</span>
@@ -216,9 +232,12 @@ export default function HomeDashboard({ onNavigateTab, onSelectGame }) {
 
           {nextRoutine ? (
             <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
                 <strong style={{ fontSize: '1.05rem', color: 'var(--text-main)' }}>{nextRoutine.title}</strong>
-                <span style={{ fontSize: '0.85rem', color: 'var(--primary-teal)', fontWeight: 700 }}>{nextRoutine.time}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--primary-teal)', fontWeight: 700 }}>{nextRoutine.time}</span>
+                  <SpeakButton text={`${nextRoutine.title}. Scheduled for ${nextRoutine.time}. ${nextRoutine.description || ''}`} variant="icon" />
+                </div>
               </div>
               <p style={{ margin: '0.35rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                 {nextRoutine.description}
@@ -245,30 +264,33 @@ export default function HomeDashboard({ onNavigateTab, onSelectGame }) {
           </div>
 
           {featuredMemory ? (
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <div
-                style={{
-                  width: '64px',
-                  height: '64px',
-                  borderRadius: '14px',
-                  backgroundColor: '#fef3c7',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '2rem',
-                  flexShrink: 0
-                }}
-              >
-                📸
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '14px',
+                    backgroundColor: '#fef3c7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    flexShrink: 0
+                  }}
+                >
+                  📸
+                </div>
+                <div>
+                  <strong style={{ display: 'block', fontSize: '1rem', color: 'var(--text-main)', marginBottom: '0.2rem' }}>
+                    {featuredMemory.title}
+                  </strong>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    {featuredMemory.year} • {featuredMemory.category}
+                  </span>
+                </div>
               </div>
-              <div>
-                <strong style={{ display: 'block', fontSize: '1rem', color: 'var(--text-main)', marginBottom: '0.2rem' }}>
-                  {featuredMemory.title}
-                </strong>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  {featuredMemory.year} • {featuredMemory.category}
-                </span>
-              </div>
+              <SpeakButton text={`${featuredMemory.title}. ${featuredMemory.story || featuredMemory.category || ''}`} variant="icon" />
             </div>
           ) : (
             <p style={{ color: 'var(--text-muted)' }}>{t.memory?.emptyDesc || 'Your private memory album is ready.'}</p>

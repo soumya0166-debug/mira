@@ -1,23 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Award, Sparkles, Brain, ArrowRight } from 'lucide-react';
+import { RotateCcw, Award, Sparkles, Brain, ArrowRight, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../../context/AppContext';
 import { adaptiveEngine } from '../../services/adaptiveEngine';
-
-// North Eastern Cultural Treasures for Memory Match
-const NER_CARDS = [
-  { id: 'rhino', label: 'One-Horned Rhino', subtitle: 'Kaziranga, Assam', icon: '🦏' },
-  { id: 'hornbill', label: 'Great Hornbill', subtitle: 'State Bird & Festival, Nagaland', icon: '🪶' },
-  { id: 'silk', label: 'Golden Muga & Eri Silk', subtitle: 'Assamese Weave', icon: '🧵' },
-  { id: 'flute', label: 'Bamboo Flute & Craft', subtitle: 'Tripura & Meghalaya', icon: '🎋' },
-  { id: 'phumdi', label: 'Floating Phumdi & Lake', subtitle: 'Loktak Lake, Manipur', icon: '🌺' },
-  { id: 'dhol', label: 'Bihu Dhol & Pepa', subtitle: 'Harvest Rhythm, Assam', icon: '🥁' },
-  { id: 'tea', label: 'Fresh Assam Tea Leaf', subtitle: 'Tea Gardens of Brahmaputra', icon: '🍃' },
-  { id: 'orchid', label: 'Blue Vanda Orchid', subtitle: 'Wild Bloom of Arunachal', icon: '🌸' }
-];
+import { getGameContent } from '../../i18n/gameTranslations';
+import audioService from '../../services/audioService';
+import SpeakButton from '../common/SpeakButton';
 
 export default function MemoryMatchGame({ onNextActivity }) {
-  const { t, activeUserId, preferredLanguage } = useApp();
+  const { t, activeUserId, language, voiceEnabled } = useApp();
   const [difficulty, setDifficulty] = useState('easy'); // easy (6 cards, 3 pairs), medium (8 cards, 4 pairs), hard (12 cards, 6 pairs)
   const [cards, setCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
@@ -27,6 +18,9 @@ export default function MemoryMatchGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
 
+  // Dynamic regional cards based on selected language
+  const availableCards = getGameContent('memory-match', language) || [];
+
   // Initialize deck based on difficulty
   const startNewGame = (diff = difficulty) => {
     setDifficulty(diff);
@@ -34,7 +28,7 @@ export default function MemoryMatchGame({ onNextActivity }) {
     if (diff === 'medium') pairCount = 4;
     if (diff === 'hard') pairCount = 6;
 
-    const selectedPairs = NER_CARDS.slice(0, pairCount);
+    const selectedPairs = availableCards.slice(0, pairCount);
     const deck = [...selectedPairs, ...selectedPairs]
       .map((c, index) => ({
         uniqueId: `${c.id}-${index}`,
@@ -53,15 +47,21 @@ export default function MemoryMatchGame({ onNextActivity }) {
 
   useEffect(() => {
     startNewGame(difficulty);
-  }, []);
+  }, [language]);
 
   const handleCardClick = (index) => {
     if (flipped.length === 2 || flipped.includes(index) || matched.includes(cards[index].id)) {
       return;
     }
 
+    const clickedCard = cards[index];
     const newFlipped = [...flipped, index];
     setFlipped(newFlipped);
+
+    // Speak card name aloud when flipped for non-reading elders
+    if (voiceEnabled && clickedCard) {
+      audioService.speakText(`${clickedCard.label}`, language);
+    }
 
     if (newFlipped.length === 2) {
       setMoves(m => m + 1);
@@ -74,6 +74,13 @@ export default function MemoryMatchGame({ onNextActivity }) {
         const newMatched = [...matched, card1.id];
         setMatched(newMatched);
         setFlipped([]);
+        audioService.playSuccessChime();
+
+        if (voiceEnabled) {
+          setTimeout(() => {
+            audioService.speakText('Pair matched! Well done.', language);
+          }, 600);
+        }
 
         // Check game completion
         const totalPairs = cards.length / 2;
@@ -98,6 +105,10 @@ export default function MemoryMatchGame({ onNextActivity }) {
     try {
       confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
     } catch {}
+
+    if (voiceEnabled) {
+      audioService.speakText('Congratulations! You matched all the North Eastern treasures beautifully.', language);
+    }
 
     const result = await adaptiveEngine.recordGameSession({
       userId: activeUserId || 'usr-radha-1',
@@ -124,10 +135,19 @@ export default function MemoryMatchGame({ onNextActivity }) {
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-teal)', fontWeight: 700 }}>
               Game 1 of 8 • Cultural Memory
             </span>
-            <h2 style={{ margin: '0.25rem 0 0.5rem', color: 'var(--text-main)' }}>
-              {t.games?.game1Title || 'Heritage Memory Match'}
-            </h2>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-main)' }}>
+                {t.games?.game1Title || 'Heritage Memory Match'}
+              </h2>
+              <SpeakButton
+                text={`${t.games?.game1Title || 'Heritage Memory Match'}. ${t.games?.game1Desc || 'Match pairs of North Eastern cultural treasures at your own peaceful pace.'}`}
+                lang={language}
+                variant="icon"
+                size={18}
+                title="Hear game instructions"
+              />
+            </div>
+            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
               {t.games?.game1Desc || 'Match pairs of North Eastern cultural treasures at your own peaceful pace.'}
             </p>
           </div>

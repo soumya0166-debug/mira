@@ -7,6 +7,7 @@ import {
   Shield, 
   ChevronDown,
   Volume2,
+  VolumeX,
   LogOut,
   Users,
   User
@@ -33,7 +34,9 @@ export default function Header() {
     setActiveTab,
     isOnline,
     syncStatus,
-    pendingCount
+    pendingCount,
+    voiceEnabled,
+    setVoiceEnabled
   } = useApp();
 
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -176,24 +179,61 @@ export default function Header() {
 
         {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {/* Voice Guidance Toggle for Seniors */}
+          <button 
+            onClick={() => {
+              const next = !voiceEnabled;
+              setVoiceEnabled(next);
+              if (next) {
+                audioService.speak(
+                  language === 'as' ? 'কণ্ঠ সহায়ক সক্ৰিয় কৰা হৈছে' :
+                  language === 'bn' ? 'কণ্ঠ নির্দেশিকা সক্রিয় করা হয়েছে' :
+                  language === 'brx' ? 'Voice guidance on' :
+                  language === 'mni' ? 'Voice guidance on' :
+                  'Voice guidance enabled',
+                  language
+                );
+              }
+            }}
+            title={voiceEnabled ? "Voice guidance is ON. Tap to mute." : "Voice guidance is OFF. Tap to enable speech."}
+            aria-label={voiceEnabled ? "Mute voice guidance" : "Enable voice guidance"}
+            style={{
+              padding: '0.45rem 0.8rem',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: voiceEnabled ? '#ecfdf5' : '#fef2f2',
+              border: `1.5px solid ${voiceEnabled ? '#10b981' : '#f87171'}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              color: voiceEnabled ? '#047857' : '#b91c1c',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              cursor: 'pointer'
+            }}
+          >
+            {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            <span>{voiceEnabled ? 'Voice ON' : 'Voice OFF'}</span>
+          </button>
+
           {/* Quick Sound Chime Test */}
           <button 
             onClick={() => audioService.playReminderChime()}
             title="Play gentle reminder chime"
             aria-label="Play soothing chime sound"
             style={{
-              width: '40px',
-              height: '40px',
+              width: '38px',
+              height: '38px',
               borderRadius: '50%',
               backgroundColor: 'var(--pink-50)',
               border: '1px solid var(--pink-200)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--wine-700)'
+              color: 'var(--wine-700)',
+              cursor: 'pointer'
             }}
           >
-            <Volume2 size={18} />
+            <span style={{ fontSize: '1rem' }}>🔔</span>
           </button>
 
           {/* Font Size Selector */}
@@ -312,6 +352,9 @@ export default function Header() {
                     onClick={() => {
                       setLanguage(item.code);
                       setLangMenuOpen(false);
+                      if (voiceEnabled) {
+                        audioService.speak(item.native, item.code);
+                      }
                     }}
                     style={{
                       width: '100%',

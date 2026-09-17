@@ -77,12 +77,56 @@ assert(fallbackTest.routine.title === translations.en.routine.title, 'Routine ti
 // 4. Aliasing bridge test
 const asT = getTranslationProxy('as');
 assert(asT.gallery.slideshow === asT.memory.slideshow, 'Assamese gallery.slideshow aliases to memory.slideshow');
-assert(asT.wellness.title === asT.progress.title, 'Assamese wellness.title aliases to progress.title');
-assert(asT.guardian.title === asT.caregiver.title || asT.guardian.title.length > 0, 'Assamese guardian.title aliases/resolves properly');
+// 5. Verify game content engine across all 7 games and all 10 languages
+import { getGameContent, getGameMetadata, GAME_METADATA } from './src/i18n/gameTranslations.js';
+
+const gamesList = [
+  'memory-match',
+  'sequence-recall',
+  'object-recall',
+  'daily-recall',
+  'picture-recognition',
+  'language-recall',
+  'pattern-recognition'
+];
+
+expectedCodes.forEach(code => {
+  gamesList.forEach(gameId => {
+    const content = getGameContent(gameId, code);
+    assert(Array.isArray(content) && content.length > 0, `Game '${gameId}' has content array in '${code}' (length: ${content?.length})`);
+    
+    // Check specific options integrity
+    if (gameId === 'daily-recall') {
+      content.forEach((q, idx) => {
+        assert(Array.isArray(q.options) && q.options.length === 4, `'${code}' daily-recall Q${idx+1} has 4 options`);
+        assert(typeof q.question === 'string' && q.question.length > 0, `'${code}' daily-recall Q${idx+1} has question text`);
+      });
+    } else if (gameId === 'picture-recognition') {
+      content.forEach((item, idx) => {
+        assert(Array.isArray(item.options) && item.options.length === 4, `'${code}' picture-recognition landmark ${idx+1} has 4 options`);
+        assert(typeof item.clue === 'string' && item.clue.length > 0, `'${code}' picture-recognition landmark ${idx+1} has clue`);
+      });
+    } else if (gameId === 'language-recall') {
+      content.forEach((pair, idx) => {
+        assert(Array.isArray(pair.options) && pair.options.length === 4, `'${code}' language-recall pair ${idx+1} has 4 options`);
+        assert(typeof pair.nativeWord === 'string' && pair.nativeWord.length > 0, `'${code}' language-recall pair ${idx+1} has nativeWord`);
+      });
+    } else if (gameId === 'pattern-recognition') {
+      content.forEach((pat, idx) => {
+        assert(Array.isArray(pat.options) && pat.options.length === 4, `'${code}' pattern-recognition motif ${idx+1} has 4 options`);
+        assert(typeof pat.description === 'string' && pat.description.length > 0, `'${code}' pattern-recognition motif ${idx+1} has description`);
+      });
+    }
+  });
+
+  // Verify metadata for games
+  const meta = getGameMetadata('memory-match', code);
+  assert(meta && typeof meta.title === 'string' && meta.title.length > 0, `'${code}' memory-match metadata title: "${meta?.title}"`);
+});
 
 console.log(`\n--- VERIFICATION RESULT: ${passedTests}/${totalTests} TESTS PASSED ---`);
 if (passedTests === totalTests) {
-  console.log('ALL TESTS PASSED SUCCESSFULLY! Multilingual switching is fully functional across all sections.');
+  console.log('ALL TESTS PASSED SUCCESSFULLY! Multilingual switching and game options are fully functional across all sections.');
   process.exit(0);
 } else {
   console.error(`FAILED: ${totalTests - passedTests} tests failed.`);

@@ -1,68 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { RotateCcw, Brain, MapPin, CheckCircle2, ArrowRight } from 'lucide-react';
+import { RotateCcw, Brain, MapPin, CheckCircle2, ArrowRight, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useApp } from '../../context/AppContext';
 import { adaptiveEngine } from '../../services/adaptiveEngine';
-
-const NER_LANDMARKS = [
-  {
-    id: 'kaziranga',
-    name: 'Kaziranga National Park',
-    state: 'Assam',
-    clue: 'World heritage sanctuary on the banks of Brahmaputra, home to the majestic one-horned rhino.',
-    icon: '🦏🌾',
-    svgColor: '#15803d',
-    options: ['Kaziranga National Park', 'Sundarbans Forest', 'Corbett Valley', 'Gir Forest']
-  },
-  {
-    id: 'majuli',
-    name: 'Majuli River Island',
-    state: 'Assam',
-    clue: 'The serene world’s largest river island, famous for Vaishnavite Satras and mask-making art.',
-    icon: '🏝️🎭',
-    svgColor: '#0284c7',
-    options: ['Majuli River Island', 'Andaman Island', 'Diu Fortress', 'Elephanta Caves']
-  },
-  {
-    id: 'root_bridge',
-    name: 'Living Root Bridges',
-    state: 'Meghalaya',
-    clue: 'Spectacular bridges handcrafted by the Khasi tribe from living rubber fig tree roots over rushing streams.',
-    icon: '🌉🌿',
-    svgColor: '#047857',
-    options: ['Living Root Bridges', 'Howrah Cantilever', 'Pamban Bridge', 'Bandra Sea Link']
-  },
-  {
-    id: 'loktak',
-    name: 'Loktak Floating Lake',
-    state: 'Manipur',
-    clue: 'Only floating lake in the world with round green phumdis and the gentle dancing Sangai deer.',
-    icon: '🌊🦌',
-    svgColor: '#0d9488',
-    options: ['Loktak Floating Lake', 'Dal Lake', 'Chilika Lagoon', 'Vembanad Lake']
-  },
-  {
-    id: 'tawang',
-    name: 'Tawang Monastery',
-    state: 'Arunachal Pradesh',
-    clue: 'Second largest Buddhist monastery in the world perched amidst high misty snow-clad Himalayan peaks.',
-    icon: '🏯🏔️',
-    svgColor: '#b45309',
-    options: ['Tawang Monastery', 'Sanchi Stupa', 'Ajanta Monolith', 'Hemis Gompa']
-  },
-  {
-    id: 'ujjayanta',
-    name: 'Ujjayanta Palace',
-    state: 'Tripura',
-    clue: 'Magnificent white neoclassical palace in Agartala, surrounded by Mughal-style reflecting water gardens.',
-    icon: '🏛️⛲',
-    svgColor: '#4f46e5',
-    options: ['Ujjayanta Palace', 'Mysore Palace', 'Hawa Mahal', 'City Palace Udaipur']
-  }
-];
+import { getGameContent } from '../../i18n/gameTranslations';
+import audioService from '../../services/audioService';
+import SpeakButton from '../common/SpeakButton';
 
 export default function PictureRecognitionGame({ onNextActivity }) {
-  const { t, activeUserId } = useApp();
+  const { t, activeUserId, language, voiceEnabled } = useApp();
   const [difficulty, setDifficulty] = useState('easy');
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
@@ -71,10 +17,13 @@ export default function PictureRecognitionGame({ onNextActivity }) {
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
 
+  // Dynamic landmarks according to selected regional language
+  const landmarks = getGameContent('picture-recognition', language) || [];
+
   const getQuestionCount = (diff = difficulty) => {
-    if (diff === 'easy') return 3;
-    if (diff === 'medium') return 4;
-    return 6;
+    if (diff === 'easy') return Math.min(3, landmarks.length);
+    if (diff === 'medium') return Math.min(4, landmarks.length);
+    return landmarks.length;
   };
 
   const startNewGame = (diff = difficulty) => {
@@ -89,18 +38,38 @@ export default function PictureRecognitionGame({ onNextActivity }) {
 
   useEffect(() => {
     startNewGame(difficulty);
-  }, []);
+  }, [language]);
 
   const totalQuestions = getQuestionCount(difficulty);
-  const currentLandmark = NER_LANDMARKS[currentIdx];
+  const currentLandmark = landmarks[currentIdx] || landmarks[0];
+
+  // Auto-announce clue when landmark changes if voice is enabled
+  useEffect(() => {
+    if (currentLandmark && voiceEnabled && !isCompleted) {
+      const clueText = `${currentLandmark.clue}. Which landmark in ${currentLandmark.state} is this?`;
+      const timer = setTimeout(() => {
+        audioService.speakText(clueText, language);
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+  }, [currentIdx, language, isCompleted, voiceEnabled]);
 
   const handleSelect = (option) => {
-    if (selectedOption !== null) return;
+    if (selectedOption !== null || !currentLandmark) return;
     setSelectedOption(option);
 
     const isCorrect = option === currentLandmark.name;
     if (isCorrect) {
       setScore(s => s + Math.round(100 / totalQuestions));
+      audioService.playSuccessChime();
+      if (voiceEnabled) {
+        audioService.speakText(`Correct! It is ${currentLandmark.name}.`, language);
+      }
+    } else {
+      audioService.playSoftClick();
+      if (voiceEnabled) {
+        audioService.speakText(`Good try! That was ${currentLandmark.name}.`, language);
+      }
     }
 
     setTimeout(() => {
@@ -110,7 +79,7 @@ export default function PictureRecognitionGame({ onNextActivity }) {
       } else {
         finishGame(isCorrect ? score + Math.round(100 / totalQuestions) : score);
       }
-    }, 1200);
+    }, 1400);
   };
 
   const finishGame = async (finalScore) => {
@@ -121,6 +90,10 @@ export default function PictureRecognitionGame({ onNextActivity }) {
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
     } catch {}
+
+    if (voiceEnabled) {
+      audioService.speakText('Splendid job! You identified our cherished North Eastern landmarks.', language);
+    }
 
     const result = await adaptiveEngine.recordGameSession({
       userId: activeUserId || 'usr-radha-1',
@@ -140,16 +113,26 @@ export default function PictureRecognitionGame({ onNextActivity }) {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      {/* Header */}
       <div className="mira-card" style={{ marginBottom: '1.25rem', padding: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-teal)', fontWeight: 700 }}>
               Game 7 of 8 • Cultural Landmarks & Visual Association
             </span>
-            <h2 style={{ margin: '0.25rem 0 0.5rem', color: 'var(--text-main)' }}>
-              {t.games?.game7Title || 'Heritage Picture Recognition'}
-            </h2>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-main)' }}>
+                {t.games?.game7Title || 'Heritage Picture Recognition'}
+              </h2>
+              <SpeakButton
+                text={`${t.games?.game7Title || 'Heritage Picture Recognition'}. ${t.games?.game7Desc || 'Identify celebrated landmarks of our 8 states.'}`}
+                lang={language}
+                variant="icon"
+                size={18}
+                title="Hear game instructions"
+              />
+            </div>
+            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
               {t.games?.game7Desc || 'Identify cherished places and heritage sanctuaries across our 8 North Eastern states.'}
             </p>
           </div>
@@ -184,6 +167,7 @@ export default function PictureRecognitionGame({ onNextActivity }) {
         </div>
       </div>
 
+      {/* Landmark Card and Options */}
       {!isCompleted && currentLandmark && (
         <div className="mira-card" style={{ padding: '2rem', textAlign: 'center' }}>
           {/* Landmark Visual Presentation */}
@@ -192,25 +176,35 @@ export default function PictureRecognitionGame({ onNextActivity }) {
               padding: '2rem 1.5rem',
               borderRadius: '20px',
               backgroundColor: '#f8fafc',
-              border: `2px solid ${currentLandmark.svgColor}`,
+              border: '2px solid var(--primary-teal)',
               marginBottom: '1.5rem',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+              position: 'relative'
             }}
           >
             <div style={{ fontSize: '4rem', marginBottom: '0.5rem' }}>{currentLandmark.icon}</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#e2e8f0', padding: '0.3rem 0.8rem', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 700, color: '#334155', marginBottom: '0.75rem' }}>
               <MapPin size={16} /> {currentLandmark.state}, North East India
             </div>
-            <p style={{ fontSize: '1.1rem', color: 'var(--text-main)', fontStyle: 'italic', maxWidth: '600px', margin: '0 auto' }}>
+            <p style={{ fontSize: '1.15rem', color: 'var(--text-main)', fontStyle: 'italic', maxWidth: '600px', margin: '0 auto', lineHeight: 1.5 }}>
               "{currentLandmark.clue}"
             </p>
+            <div style={{ marginTop: '1rem' }}>
+              <SpeakButton
+                text={`${currentLandmark.clue}. In ${currentLandmark.state}, North East India.`}
+                lang={language}
+                variant="pill"
+                label="🔊 Hear Clue"
+                title="Hear landmark clue"
+              />
+            </div>
           </div>
 
-          <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-main)', marginBottom: '1.25rem' }}>
+          <p style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1.25rem' }}>
             Which famous landmark is described above?
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
             {currentLandmark.options.map((opt, idx) => {
               const isSelected = selectedOption === opt;
               const isCorrectOpt = opt === currentLandmark.name;
@@ -220,26 +214,39 @@ export default function PictureRecognitionGame({ onNextActivity }) {
                   onClick={() => handleSelect(opt)}
                   disabled={selectedOption !== null}
                   style={{
-                    padding: '1.1rem',
+                    padding: '1.1rem 1.25rem',
                     borderRadius: '16px',
                     border: isSelected
                       ? isCorrectOpt
                         ? '3px solid #16a34a'
                         : '3px solid #dc2626'
-                      : '1px solid var(--border-subtle)',
+                      : '1.5px solid var(--border-subtle)',
                     backgroundColor: isSelected
                       ? isCorrectOpt
                         ? '#dcfce7'
                         : '#fee2e2'
                       : 'var(--card-bg)',
                     fontWeight: 600,
-                    fontSize: '1rem',
+                    fontSize: '1.05rem',
                     color: 'var(--text-main)',
                     cursor: selectedOption === null ? 'pointer' : 'default',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.75rem',
+                    textAlign: 'left'
                   }}
                 >
-                  {opt}
+                  <span style={{ flex: 1 }}>{opt}</span>
+                  {/* Option audio button for illiterate elderly users */}
+                  <SpeakButton
+                    text={opt}
+                    lang={language}
+                    variant="option"
+                    size={18}
+                    title={`Hear option ${opt}`}
+                  />
                 </button>
               );
             })}
@@ -247,11 +254,14 @@ export default function PictureRecognitionGame({ onNextActivity }) {
         </div>
       )}
 
+      {/* Completion View */}
       {isCompleted && (
         <div className="mira-card" style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#ecfdf5', borderColor: '#86efac' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏔️🏛️✨</div>
-          <h3 style={{ color: '#065f46', margin: '0 0 0.5rem' }}>Splendid Regional Heritage Knowledge!</h3>
-          <p style={{ color: '#047857', margin: '0 0 1.25rem', fontSize: '1rem' }}>
+          <h3 style={{ color: '#065f46', margin: '0 0 0.5rem', fontSize: '1.4rem' }}>
+            Splendid Regional Heritage Knowledge!
+          </h3>
+          <p style={{ color: '#047857', margin: '0 0 1.25rem', fontSize: '1.05rem' }}>
             You identified the scenic places of North East India with warmth and recognition.
           </p>
 

@@ -9,6 +9,8 @@ import DailyRecallGame from './DailyRecallGame';
 import PictureRecognitionGame from './PictureRecognitionGame';
 import SimpleLanguageRecallGame from './SimpleLanguageRecallGame';
 import { useApp } from '../../context/AppContext';
+import { getGameMetadata } from '../../i18n/gameTranslations';
+import SpeakButton from '../common/SpeakButton';
 
 export const ALL_GAMES = [
   {
@@ -86,7 +88,7 @@ export const ALL_GAMES = [
 ];
 
 export default function GamesHub({ initialGameId, onBackToHub }) {
-  const { t, gameSessions } = useApp();
+  const { t, gameSessions, language } = useApp();
   const [selectedGameId, setSelectedGameId] = useState(initialGameId || null);
 
   const handleNextActivity = (currentId) => {
@@ -146,19 +148,30 @@ export default function GamesHub({ initialGameId, onBackToHub }) {
     );
   }
 
+  const hubTitle = t.games?.title || 'Personalized Cognitive Activities';
+  const hubSubtitle = t.games?.subtitle || 'Gentle, culturally rooted activities for memory, focus, and joy. No rush or clinical stress.';
+
   return (
     <div>
       {/* Header */}
       <div style={{ marginBottom: '1.75rem', textAlign: 'left' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
-          <Brain size={18} />
-          <span>8 Culturally Tailored Activities • Adaptive Pacing</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
+            <Brain size={18} />
+            <span>8 Culturally Tailored Activities • Adaptive Pacing</span>
+          </div>
+          <SpeakButton
+            text={`${hubTitle}. ${hubSubtitle}`}
+            lang={language}
+            variant="pill"
+            label="🔊 Read Overview"
+          />
         </div>
         <h1 style={{ margin: '0 0 0.5rem', color: 'var(--text-main)', fontSize: '2rem' }}>
-          {t.games?.title || 'Personalized Cognitive Activities'}
+          {hubTitle}
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: 0, maxWidth: '700px' }}>
-          {t.games?.subtitle || 'Gentle, culturally rooted activities for memory, focus, and joy. No rush or clinical stress.'}
+          {hubSubtitle}
         </p>
       </div>
 
@@ -195,69 +208,86 @@ export default function GamesHub({ initialGameId, onBackToHub }) {
           gap: '1.25rem'
         }}
       >
-        {ALL_GAMES.map((game, index) => (
-          <div
-            key={game.id}
-            className="mira-card"
-            style={{
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-              borderRadius: '20px'
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '2.75rem' }}>{game.icon}</span>
-                <span
-                  style={{
-                    backgroundColor: '#e0f2fe',
-                    color: '#0369a1',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    padding: '0.25rem 0.65rem',
-                    borderRadius: '12px'
-                  }}
-                >
-                  {game.badge}
+        {ALL_GAMES.map((game, index) => {
+          const meta = getGameMetadata(game.id, language) || {};
+          const gameTitle = meta.title || t.games?.[`game${index + 1}Title`] || game.title;
+          const gameDesc = meta.desc || t.games?.[`game${index + 1}Desc`] || game.desc;
+          const gameBadge = meta.badge || game.badge;
+          const gameCategory = meta.category || game.category;
+
+          return (
+            <div
+              key={game.id}
+              className="mira-card"
+              style={{
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                borderRadius: '20px'
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '2.75rem' }}>{game.icon}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span
+                      style={{
+                        backgroundColor: '#e0f2fe',
+                        color: '#0369a1',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '12px'
+                      }}
+                    >
+                      {gameBadge}
+                    </span>
+                    <SpeakButton
+                      text={`${gameTitle}. ${gameDesc}`}
+                      lang={language}
+                      variant="icon"
+                      size={16}
+                      title={`Listen to ${gameTitle}`}
+                    />
+                  </div>
+                </div>
+
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-teal)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {t.games?.activityLabel || 'Activity'} {index + 1} • {gameCategory}
                 </span>
+                <h3 style={{ margin: '0.25rem 0 0.5rem', fontSize: '1.25rem', color: 'var(--text-main)' }}>
+                  {gameTitle}
+                </h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.45 }}>
+                  {gameDesc}
+                </p>
               </div>
 
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary-teal)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                {t.games?.activityLabel || 'Activity'} {index + 1} • {game.category}
-              </span>
-              <h3 style={{ margin: '0.25rem 0 0.5rem', fontSize: '1.25rem', color: 'var(--text-main)' }}>
-                {t.games?.[`game${index + 1}Title`] || game.title}
-              </h3>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.45 }}>
-                {t.games?.[`game${index + 1}Desc`] || game.desc}
-              </p>
+              <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  {t.games?.difficultyPill || 'Easy • Medium • Hard'}
+                </span>
+                <button
+                  onClick={() => {
+                    setSelectedGameId(game.id);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="mira-btn-primary"
+                  style={{
+                    padding: '0.55rem 1.15rem',
+                    fontSize: '0.9rem',
+                    borderRadius: '14px',
+                    fontWeight: 600
+                  }}
+                >
+                  {t.games?.playActivity || t.games?.startPlaying || 'Play Activity'}
+                </button>
+              </div>
             </div>
-
-            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                {t.games?.difficultyPill || 'Easy • Medium • Hard'}
-              </span>
-              <button
-                onClick={() => {
-                  setSelectedGameId(game.id);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="mira-btn-primary"
-                style={{
-                  padding: '0.55rem 1.15rem',
-                  fontSize: '0.9rem',
-                  borderRadius: '14px',
-                  fontWeight: 600
-                }}
-              >
-                {t.games?.playActivity || t.games?.startPlaying || 'Play Activity'}
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

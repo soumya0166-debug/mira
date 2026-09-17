@@ -12,9 +12,10 @@ import {
 import { useApp } from '../../context/AppContext';
 import audioService from '../../services/audioService';
 import AddReminderModal from './AddReminderModal';
+import SpeakButton from '../common/SpeakButton';
 
 export default function RoutineSchedule() {
-  const { routines, toggleRoutine, addRoutine, mode, t } = useApp();
+  const { routines, toggleRoutine, addRoutine, mode, t, language, voiceEnabled } = useApp();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const completedCount = routines.filter((r) => r.completedToday).length;
@@ -51,7 +52,13 @@ export default function RoutineSchedule() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <SpeakButton 
+            text={`${t.routine.title}. ${t.routine.progressToday}: ${completedCount} of ${routines.length} completed.`} 
+            label="Listen to Schedule" 
+            variant="senior" 
+          />
+
           <button 
             onClick={handlePlayChime} 
             className="btn-secondary"
@@ -105,8 +112,8 @@ export default function RoutineSchedule() {
         </div>
       </div>
 
-      {/* Timetable by Period */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+      {/* Routine Categories */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {periods.map((period) => {
           const items = routines.filter((r) => r.period === period.id);
           if (items.length === 0) return null;
@@ -114,17 +121,20 @@ export default function RoutineSchedule() {
           return (
             <section key={period.id}>
               <div 
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  marginBottom: '0.85rem'
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.6rem', 
+                  marginBottom: '1rem',
+                  borderBottom: '1.5px solid var(--ivory-border)',
+                  paddingBottom: '0.5rem'
                 }}
               >
                 <span style={{ fontSize: '1.4rem' }}>{period.icon}</span>
-                <h2 style={{ fontSize: '1.25rem', color: 'var(--wine-900)', margin: 0 }}>
-                  {period.title}
-                </h2>
+                <h2 style={{ fontSize: '1.35rem', margin: 0, color: 'var(--text-main)' }}>{period.title}</h2>
+                <span className="badge badge-wine" style={{ marginLeft: 'auto' }}>
+                  {items.filter((i) => i.completedToday).length} / {items.length}
+                </span>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -147,7 +157,7 @@ export default function RoutineSchedule() {
                       }}
                     >
                       {/* Left: Icon & Info */}
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flex: 1 }}>
                         <span 
                           style={{
                             fontSize: '1.8rem',
@@ -164,7 +174,7 @@ export default function RoutineSchedule() {
                           {item.icon}
                         </span>
 
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <span 
                               style={{
@@ -183,19 +193,25 @@ export default function RoutineSchedule() {
                             </span>
                           </div>
 
-                          <h3 
-                            style={{
-                              fontSize: '1.1rem',
-                              margin: '0.2rem 0',
-                              color: isDone ? '#166534' : 'var(--wine-900)',
-                              textDecoration: isDone ? 'line-through' : 'none'
-                            }}
-                          >
-                            {item.title}
-                          </h3>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                            <h3 
+                              style={{
+                                fontSize: '1.1rem',
+                                margin: 0,
+                                color: isDone ? '#166534' : 'var(--wine-900)',
+                                textDecoration: isDone ? 'line-through' : 'none'
+                              }}
+                            >
+                              {item.title}
+                            </h3>
+                            <SpeakButton 
+                              text={`${item.title}. Scheduled for ${item.time}. ${item.instructions || ''}`} 
+                              variant="icon" 
+                            />
+                          </div>
 
                           {item.instructions && (
-                            <p style={{ fontSize: '0.88rem', color: isDone ? '#15803d' : 'var(--text-muted)', margin: 0 }}>
+                            <p style={{ fontSize: '0.88rem', color: isDone ? '#15803d' : 'var(--text-muted)', margin: '0.25rem 0 0' }}>
                               {item.instructions}
                             </p>
                           )}
@@ -210,7 +226,17 @@ export default function RoutineSchedule() {
 
                       {/* Right: Tactile Checkoff Toggle */}
                       <button
-                        onClick={() => toggleRoutine(item.id)}
+                        onClick={() => {
+                          toggleRoutine(item.id);
+                          if (voiceEnabled) {
+                            audioService.speak(
+                              !isDone 
+                                ? `${item.title} completed` 
+                                : `${item.title} marked as pending`, 
+                              language
+                            );
+                          }
+                        }}
                         className={isDone ? 'btn-secondary' : 'btn-primary'}
                         style={{
                           backgroundColor: isDone ? '#dcfce7' : 'var(--wine-700)',

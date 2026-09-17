@@ -4,17 +4,11 @@ import confetti from 'canvas-confetti';
 import { useApp } from '../../context/AppContext';
 import { adaptiveEngine } from '../../services/adaptiveEngine';
 import { audioService } from '../../services/audioService';
-
-// Traditional Drums of North East India
-const DRUMS = [
-  { id: 0, name: 'Bihu Dhol', region: 'Assam', color: '#c2410c', glow: '#fdba74', icon: '🥁', soundFreq: 260 },
-  { id: 1, name: 'Manipuri Pung', region: 'Manipur', color: '#047857', glow: '#86efac', icon: '🪘', soundFreq: 330 },
-  { id: 2, name: 'Garo Dama', region: 'Meghalaya', color: '#1d4ed8', glow: '#93c5fd', icon: '🪕', soundFreq: 392 },
-  { id: 3, name: 'Mizo Khuang', region: 'Mizoram', color: '#7e22ce', glow: '#d8b4fe', icon: '🔔', soundFreq: 523 }
-];
+import { getGameContent } from '../../i18n/gameTranslations';
+import SpeakButton from '../common/SpeakButton';
 
 export default function SequenceRecallGame({ onNextActivity }) {
-  const { t, activeUserId } = useApp();
+  const { t, activeUserId, language, voiceEnabled } = useApp();
   const [difficulty, setDifficulty] = useState('easy'); // easy: 3 steps, medium: 5 steps, hard: 7 steps
   const [sequence, setSequence] = useState([]);
   const [playerStep, setPlayerStep] = useState(0);
@@ -24,6 +18,9 @@ export default function SequenceRecallGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
+
+  // Dynamic drums according to selected language
+  const drums = getGameContent('sequence-recall', language) || [];
 
   const getTargetLength = (diff = difficulty) => {
     if (diff === 'easy') return 3;
@@ -51,7 +48,7 @@ export default function SequenceRecallGame({ onNextActivity }) {
     const len = getTargetLength(diff);
     const newSeq = [];
     for (let i = 0; i < len; i++) {
-      newSeq.push(Math.floor(Math.random() * DRUMS.length));
+      newSeq.push(Math.floor(Math.random() * (drums.length || 4)));
     }
     return newSeq;
   };
@@ -72,24 +69,33 @@ export default function SequenceRecallGame({ onNextActivity }) {
     setIsPlayingSequence(true);
     setStatusMessage('Watch and listen to the gentle rhythm...');
 
+    if (voiceEnabled) {
+      audioService.speakText('Listen to the drums carefully.', language);
+      await new Promise(r => setTimeout(r, 1200));
+    }
+
     for (let i = 0; i < seq.length; i++) {
       await new Promise(r => setTimeout(r, 600));
       const drumId = seq[i];
       setActiveDrum(drumId);
-      playTone(DRUMS[drumId].soundFreq);
+      playTone(drums[drumId]?.soundFreq || 260);
       await new Promise(r => setTimeout(r, 650));
       setActiveDrum(null);
     }
 
     setIsPlayingSequence(false);
     setStatusMessage('Your turn! Tap the drums in the same peaceful order.');
+
+    if (voiceEnabled) {
+      audioService.speakText('Your turn. Tap the drums in order.', language);
+    }
   };
 
   const handleDrumClick = (drumId) => {
     if (isPlayingSequence || isCompleted || sequence.length === 0) return;
 
     setActiveDrum(drumId);
-    playTone(DRUMS[drumId].soundFreq);
+    playTone(drums[drumId]?.soundFreq || 260);
     setTimeout(() => setActiveDrum(null), 300);
 
     if (sequence[playerStep] === drumId) {
@@ -105,10 +111,13 @@ export default function SequenceRecallGame({ onNextActivity }) {
     } else {
       // Gentle mismatch without buzzer or jarring sounds
       setStatusMessage('Gently take a breath. Let us listen to the rhythm once again.');
+      if (voiceEnabled) {
+        audioService.speakText('Let us listen to the rhythm once again.', language);
+      }
       setTimeout(() => {
         setPlayerStep(0);
         playBackSequence(sequence);
-      }, 1000);
+      }, 1200);
     }
   };
 
@@ -120,8 +129,13 @@ export default function SequenceRecallGame({ onNextActivity }) {
       confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
     } catch {}
 
+    audioService.playSuccessChime();
+    if (voiceEnabled) {
+      audioService.speakText('Splendid rhythm! You remembered the sequence with calm focus.', language);
+    }
+
     const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const score = 95;
+    const score = 100;
     const accuracy = 100;
 
     const result = await adaptiveEngine.recordGameSession({
@@ -142,22 +156,32 @@ export default function SequenceRecallGame({ onNextActivity }) {
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      {/* Header */}
       <div className="mira-card" style={{ marginBottom: '1.25rem', padding: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary-teal)', fontWeight: 700 }}>
-              Game 2 of 8 • Sensory & Auditory Memory
+              Game 2 of 8 • Auditory Working Memory
             </span>
-            <h2 style={{ margin: '0.25rem 0 0.5rem', color: 'var(--text-main)' }}>
-              {t.games?.game2Title || 'Rhythm Sequence Recall'}
-            </h2>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-              {t.games?.game2Desc || 'Watch the traditional drum glow and repeat the soothing pattern.'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--text-main)' }}>
+                {t.games?.game2Title || 'Rhythm Sequence Recall'}
+              </h2>
+              <SpeakButton
+                text={`${t.games?.game2Title || 'Rhythm Sequence Recall'}. ${t.games?.game2Desc || 'Watch and repeat the peaceful light and drum rhythm patterns.'}`}
+                lang={language}
+                variant="icon"
+                size={18}
+                title="Hear game instructions"
+              />
+            </div>
+            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+              {t.games?.game2Desc || 'Watch and repeat the peaceful light and drum rhythm patterns from Bihu Dhol, Manipuri Pung, and Garo Dama.'}
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Difficulty:</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Steps:</span>
             {['easy', 'medium', 'hard'].map((d) => (
               <button
                 key={d}
@@ -174,75 +198,87 @@ export default function SequenceRecallGame({ onNextActivity }) {
                   textTransform: 'capitalize'
                 }}
               >
-                {d} ({getTargetLength(d)} beats)
+                {d} ({getTargetLength(d)})
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '1rem', color: 'var(--primary-teal)', fontWeight: 600 }}>
+        {/* Status Message and Action */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-subtle)' }}>
+          <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--primary-teal)' }}>
             {statusMessage}
           </span>
-          <button
-            onClick={() => startSequence(difficulty)}
-            className="mira-btn-primary"
-            style={{ padding: '0.45rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' }}
-          >
-            <Play size={16} /> Start Sequence
-          </button>
+          {sequence.length === 0 && (
+            <button
+              onClick={() => startSequence(difficulty)}
+              className="mira-btn-primary"
+              style={{ padding: '0.5rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Play size={18} /> Start Rhythm
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 4 Cultural Drums Interface */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.25rem', marginBottom: '1.5rem' }}>
-        {DRUMS.map((drum) => {
+      {/* Drum Instruments Grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: '1.5rem',
+          maxWidth: '500px',
+          margin: '0 auto 1.5rem'
+        }}
+      >
+        {drums.map((drum) => {
           const isActive = activeDrum === drum.id;
           return (
             <button
               key={drum.id}
               onClick={() => handleDrumClick(drum.id)}
-              disabled={isPlayingSequence || isCompleted}
+              disabled={isPlayingSequence || isCompleted || sequence.length === 0}
               style={{
-                aspectRatio: '1.3',
+                aspectRatio: '1',
                 borderRadius: '24px',
-                border: isActive ? `4px solid ${drum.color}` : '2px solid var(--border-subtle)',
+                border: `3px solid ${isActive ? drum.glow : drum.color}`,
                 backgroundColor: isActive ? drum.glow : 'var(--card-bg)',
-                boxShadow: isActive ? `0 0 24px ${drum.glow}` : '0 4px 12px rgba(0,0,0,0.06)',
-                cursor: isPlayingSequence ? 'wait' : 'pointer',
+                boxShadow: isActive ? `0 0 24px ${drum.glow}` : '0 4px 12px rgba(0,0,0,0.05)',
+                cursor: (isPlayingSequence || isCompleted || sequence.length === 0) ? 'default' : 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
-                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: isActive ? 'scale(1.04)' : 'scale(1)'
+                padding: '1.5rem',
+                transform: isActive ? 'scale(1.06)' : 'scale(1)',
+                transition: 'all 0.15s ease'
               }}
             >
-              <span style={{ fontSize: '3rem', marginBottom: '0.4rem' }}>{drum.icon}</span>
-              <strong style={{ fontSize: '1.1rem', color: 'var(--text-main)' }}>{drum.name}</strong>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{drum.region}</span>
+              <span style={{ fontSize: '3.5rem', marginBottom: '0.5rem' }}>{drum.icon}</span>
+              <strong style={{ fontSize: '1.1rem', color: drum.color }}>{drum.name}</strong>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{drum.region}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Completion Card */}
+      {/* Completion View */}
       {isCompleted && (
         <div className="mira-card" style={{ padding: '1.75rem', textAlign: 'center', backgroundColor: '#ecfdf5', borderColor: '#86efac' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🪘✨</div>
-          <h3 style={{ color: '#065f46', margin: '0 0 0.5rem' }}>Rhythm & Harmony Mastered!</h3>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🥁🌟</div>
+          <h3 style={{ color: '#065f46', margin: '0 0 0.5rem' }}>Splendid Rhythmic Working Memory!</h3>
           <p style={{ color: '#047857', margin: '0 0 1.25rem', fontSize: '1rem' }}>
-            You listened closely and repeated all {sequence.length} beats with composure.
+            You mirrored all the gentle traditional drum beats accurately.
           </p>
 
           {adaptiveInfo && (
             <div style={{ backgroundColor: '#ffffff', padding: '1rem', borderRadius: '12px', marginBottom: '1.25rem', textAlign: 'left', border: '1px solid #bbf7d0' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#065f46', fontWeight: 700, marginBottom: '0.25rem' }}>
                 <Brain size={18} />
-                <span>AI Adaptive Engine Suggestion</span>
+                <span>AI Adaptive Recommendation</span>
               </div>
               <p style={{ margin: 0, fontSize: '0.9rem', color: '#374151' }}>
-                {adaptiveInfo.rationale} Next level: <strong>{adaptiveInfo.nextDifficulty}</strong>.
+                <strong>Adaptive Engine:</strong> {adaptiveInfo.rationale} Next pacing level: <span style={{ textTransform: 'capitalize', fontWeight: 700 }}>{adaptiveInfo.nextDifficulty}</span>.
               </p>
             </div>
           )}
@@ -253,7 +289,7 @@ export default function SequenceRecallGame({ onNextActivity }) {
               className="mira-btn-primary"
               style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
-              <RotateCcw size={18} /> Repeat Activity
+              <RotateCcw size={18} /> Play Again
             </button>
             {onNextActivity && (
               <button

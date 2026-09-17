@@ -13,8 +13,10 @@ import {
   Play
 } from 'lucide-react';
 import audioService from '../../services/audioService';
+import { useApp } from '../../context/AppContext';
 
 export default function ReminiscenceSlideshow({ memories, initialIndex = 0, onClose, onAddReaction }) {
+  const { language, voiceEnabled } = useApp();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioRef = useRef(null);
@@ -27,7 +29,12 @@ export default function ReminiscenceSlideshow({ memories, initialIndex = 0, onCl
       audioRef.current.pause();
     }
     setIsPlayingAudio(false);
-  }, [currentIndex]);
+
+    if (current && voiceEnabled) {
+      const speechText = `${current.title}. ${current.year ? `Year ${current.year}.` : ''} ${current.story} ${current.questionPrompt || ''}`;
+      audioService.speak(speechText, language);
+    }
+  }, [currentIndex, current?.id, voiceEnabled, language]);
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % memories.length);
@@ -51,14 +58,6 @@ export default function ReminiscenceSlideshow({ memories, initialIndex = 0, onCl
   }, [memories.length]);
 
   const toggleAudio = () => {
-    if (!current.hasAudio && !current.audioNote) {
-      // Play soothing chime and synthetic prompt
-      setIsPlayingAudio(true);
-      audioService.playReminderChime();
-      setTimeout(() => setIsPlayingAudio(false), 2400);
-      return;
-    }
-
     if (current.audioNote && current.audioNote.startsWith('data:audio')) {
       if (!audioRef.current) {
         audioRef.current = new Audio(current.audioNote);
@@ -73,7 +72,8 @@ export default function ReminiscenceSlideshow({ memories, initialIndex = 0, onCl
       }
     } else {
       setIsPlayingAudio(true);
-      audioService.playReminderChime();
+      const textToSpeak = `${current.title}. ${current.year ? `Year ${current.year}.` : ''} ${current.story} ${current.questionPrompt || ''}`;
+      audioService.speak(textToSpeak, language);
       setTimeout(() => setIsPlayingAudio(false), 2500);
     }
   };
