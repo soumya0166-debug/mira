@@ -7,7 +7,7 @@ export default function LandingView({ onGetStarted, onLogin }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-main)', color: 'var(--text-main)' }}>
-      {/* Top Government & SIH Banner */}
+      {/* Top Government Banner */}
       <div
         style={{
           backgroundColor: '#0e4a42',
@@ -23,13 +23,13 @@ export default function LandingView({ onGetStarted, onLogin }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 600 }}>
           <span>🇮🇳</span>
-          <span>Smart India Hackathon 2026 • Problem Statement ID: 26003</span>
+          <span>MIRA NER • Digital Health & Cognitive Wellness</span>
           <span style={{ opacity: 0.7 }}>|</span>
           <span>Ministry of Development of North Eastern Region (MDoNER)</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ backgroundColor: '#137a6b', padding: '0.2rem 0.6rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700 }}>
-            MedTech / HealthTech
+            Elderly Wellness & Memory Support
           </span>
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function LandingView({ onGetStarted, onLogin }) {
             className="mira-btn-primary"
             style={{ padding: '0.55rem 1.25rem', fontSize: '0.95rem' }}
           >
-            Experience Demo
+            Get Started
           </button>
         </div>
       </header>
@@ -147,7 +147,7 @@ export default function LandingView({ onGetStarted, onLogin }) {
               borderRadius: '16px'
             }}
           >
-            <span>Start Elderly Demo Experience</span>
+            <span>Get Started</span>
             <ArrowRight size={20} />
           </button>
           <button
@@ -216,17 +216,17 @@ export default function LandingView({ onGetStarted, onLogin }) {
         </div>
       </section>
 
-      {/* Hackathon Statement & Stakeholders Section */}
+      {/* Stakeholders & Wellness Initiative Section */}
       <section style={{ padding: '3rem 1.5rem', backgroundColor: '#f8fafc', borderTop: '1px solid var(--border-subtle)' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
           <h3 style={{ fontSize: '1.5rem', color: 'var(--text-main)', margin: '0 0 0.75rem' }}>
-            Built for Smart India Hackathon 2026 & MDoNER
+            Built for Senior Wellness & Caregivers • MDoNER Initiative
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
-            Addressing Problem Statement 26003 to provide accessible, high-contrast, low-cognitive-load digital wellness infrastructure for senior citizens across the North Eastern Region.
+            Providing accessible, high-contrast, low-cognitive-load digital wellness infrastructure for senior citizens and family caregivers across the North Eastern Region.
           </p>
           <button onClick={onGetStarted} className="mira-btn-primary" style={{ padding: '0.75rem 1.75rem' }}>
-            Launch Prototype Demo Flow
+            Create Your Account
           </button>
         </div>
       </section>

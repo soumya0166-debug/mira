@@ -13,7 +13,7 @@ class AIService {
    */
   async chatWithMira(message, context = {}) {
     const user = authService.getCurrentUser();
-    const token = localStorage.getItem('mira_token') || 'demo_token';
+    const token = localStorage.getItem('mira_token') || '';
 
     // If device is offline, immediately utilize local companion fallback without network delay
     if (!networkManager.isOnline) {
@@ -26,7 +26,7 @@ class AIService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'x-demo-user-id': user?.id || 'usr-radha-1'
+          'x-user-id': user?.id || ''
         },
         body: JSON.stringify({
           message,
@@ -60,7 +60,7 @@ class AIService {
    */
   async getAdaptiveDifficulty(gameType, currentDifficulty = 'medium', recentSessions = []) {
     const user = authService.getCurrentUser();
-    const token = localStorage.getItem('mira_token') || 'demo_token';
+    const token = localStorage.getItem('mira_token') || '';
 
     try {
       const response = await fetch('/api/gemini/adaptive', {
@@ -68,7 +68,7 @@ class AIService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'x-demo-user-id': user?.id || 'usr-radha-1'
+          'x-user-id': user?.id || ''
         },
         body: JSON.stringify({
           gameType,

@@ -115,7 +115,7 @@ export default function GuardianDashboard() {
   };
 
   const handleResetDemo = () => {
-    if (window.confirm('Reset all demo data to fresh initial state?')) {
+    if (window.confirm('Reset all account data to a fresh clean state?')) {
       resetToDefaults();
       audioService.playSoftClick();
     }

@@ -31,6 +31,7 @@ export default function App() {
   } = useApp();
 
   const [landingMode, setLandingMode] = useState(!isLoggedIn);
+  const [authTab, setAuthTab] = useState('signin');
 
   // If user is not logged in
   if (!isLoggedIn) {
@@ -38,12 +39,13 @@ export default function App() {
       return (
         <LandingView
           onGetStarted={() => {
-            // Log in as demo user and enter onboarding / home
-            loginById('user_ananya');
+            setAuthTab('signup');
             setLandingMode(false);
-            setActiveTab('home');
           }}
-          onLogin={() => setLandingMode(false)}
+          onLogin={() => {
+            setAuthTab('signin');
+            setLandingMode(false);
+          }}
         />
       );
     }
@@ -54,11 +56,11 @@ export default function App() {
             onClick={() => setLandingMode(true)}
             style={{ background: 'none', border: 'none', color: 'var(--primary-teal)', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem' }}
           >
-            ← Back to MIND AI - NER Showcase
+            ← Back to Overview
           </button>
-          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>SIH 2026 Problem Statement 26003</span>
+          <span style={{ fontSize: '0.8rem', color: '#64748b' }}>MIRA NER • Digital Health Initiative</span>
         </div>
-        <AuthView />
+        <AuthView initialTab={authTab} />
       </div>
     );
   }

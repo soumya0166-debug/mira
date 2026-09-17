@@ -1,7 +1,7 @@
 /**
  * Translations for MIRA NER (Memory Intelligence & Reminiscence Assistant)
  * Dedicated North Eastern Region (NER) Multilingual Architecture
- * Ministry of Development of North Eastern Region (MDoNER) - SIH 2026 PS ID: 26003
+ * Ministry of Development of North Eastern Region (MDoNER) Digital Health Initiative
  *
  * Supported 10 Regional Languages:
  * 1. English (en)
@@ -34,7 +34,7 @@ export const translations = {
   en: {
     appName: 'MIRA NER',
     appTagline: 'Memory Intelligence & Reminiscence Assistant for North Eastern Elders',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • Ministry of Development of North Eastern Region',
+    problemStatement: 'Ministry of Development of North Eastern Region • Digital Health Initiative',
     patientMode: 'Elderly Mode',
     guardianMode: 'Caregiver Mode',
     switchMode: 'Switch Mode',
@@ -208,7 +208,7 @@ export const translations = {
       addNote: 'Add Note',
       exportBackup: 'Export Data Backup',
       importBackup: 'Restore Backup',
-      resetData: 'Reset Demo Data',
+      resetData: 'Reset Account Data',
       callDoctor: 'Call Doctor / ICE',
       offlineHubTitle: 'Offline-First Data & Synchronization Hub',
       offlineHubDesc: 'Guaranteed zero progress loss in low-connectivity North Eastern regions',
@@ -256,7 +256,7 @@ export const translations = {
   as: {
     appName: 'MIRA NER',
     appTagline: 'উত্তৰ-পূৰ্বাঞ্চলৰ জ্যেষ্ঠসকলৰ বাবে স্মৃতি সহায়ক আৰু বৌদ্ধিক খেল',
-    problemStatement: 'স্মাৰ্ট ইণ্ডিয়া হেকাথন ২০২৬ • সমস্যা ২৬০০৩ • MDoNER',
+    problemStatement: 'উত্তৰ-পূব অঞ্চল উন্নয়ন মন্ত্ৰালয় (MDoNER) ডিজিটেল স্বাস্থ্য পদক্ষেপ',
     patientMode: 'জ্যেষ্ঠ নাগৰিক ব্যৱস্থা',
     guardianMode: 'অভিভাৱক ব্যৱস্থা',
     switchMode: 'মোড সলনি কৰক',
@@ -462,7 +462,7 @@ export const translations = {
   bn: {
     appName: 'MIRA NER',
     appTagline: 'উত্তর-পূর্বাঞ্চলের প্রবীণদের জন্য স্মৃতি সহায়তা ও বৌদ্ধিক খেলা',
-    problemStatement: 'স্মার্ট ইন্ডিয়া হ্যাকাথন ২০২৬ • সমস্যা ২৬০০৩ • MDoNER',
+    problemStatement: 'উত্তর-পূর্ব অঞ্চল উন্নয়ন মন্ত্রক (MDoNER) ডিজিটাল স্বাস্থ্য উদ্যোগ',
     patientMode: 'প্রবীণ মোড',
     guardianMode: 'অভিভাবক মোড',
     switchMode: 'মোড পরিবর্তন',
@@ -668,7 +668,7 @@ export const translations = {
   brx: {
     appName: 'MIRA NER',
     appTagline: 'सानफ्रोमबोनि गोसोखां आरो मेलेमनि बादायलायनाय',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • MDoNER',
+    problemStatement: 'Ministry of Development of North Eastern Region (MDoNER)',
     patientMode: 'बैसो गोरा मोद',
     guardianMode: 'सामलायगिरि मोद',
     switchMode: 'मोद सोलाय',
@@ -874,7 +874,7 @@ export const translations = {
   mni: {
     appName: 'MIRA NER',
     appTagline: 'অহল-লমনশিংগী ৱাখলগী অমসুং নীংশিং থৌরমগী মতেং',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • MDoNER',
+    problemStatement: 'Ministry of Development of North Eastern Region (MDoNER)',
     patientMode: 'অহল মোদ',
     guardianMode: 'য়েংশিনবীগী মোদ',
     switchMode: 'মোদ হোংদোকউ',
@@ -1080,7 +1080,7 @@ export const translations = {
   kha: {
     appName: 'MIRA NER',
     appTagline: 'Ka jingiarap jingkynmaw bad jingpynshlur jingmut ia ki riewtymmen',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • MDoNER',
+    problemStatement: 'Ministry of Development of North Eastern Region (MDoNER)',
     patientMode: 'Riewtymmen Mode',
     guardianMode: 'Nongsumar Mode',
     switchMode: 'Kylliang Mode',
@@ -1286,7 +1286,7 @@ export const translations = {
   lus: {
     appName: 'MIRA NER',
     appTagline: 'Pitar putarte tana hriatrengna leh thluak sawizawina',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • MDoNER',
+    problemStatement: 'Ministry of Development of North Eastern Region (MDoNER)',
     patientMode: 'Kumupate Mode',
     guardianMode: 'Enkawltu Mode',
     switchMode: 'Thlakna',
@@ -1492,7 +1492,7 @@ export const translations = {
   grt: {
     appName: 'MIRA NER',
     appTagline: 'Budepade-mechikmarangna gisik bimik ba chasongna dakchakani',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • MDoNER',
+    problemStatement: 'Ministry of Development of North Eastern Region (MDoNER)',
     patientMode: 'Bude Mode',
     guardianMode: 'Nitimgipa Mode',
     switchMode: 'Dingtang Daka',
@@ -1698,7 +1698,7 @@ export const translations = {
   trp: {
     appName: 'MIRA NER',
     appTagline: 'Kwbang kwrak bororogrogno tongmung tei uansukmung rwna',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • MDoNER',
+    problemStatement: 'Ministry of Development of North Eastern Region (MDoNER)',
     patientMode: 'Kwbang Borok Mode',
     guardianMode: 'Naituknai Mode',
     switchMode: 'Slainani',
@@ -1904,7 +1904,7 @@ export const translations = {
   nag: {
     appName: 'MIRA NER',
     appTagline: 'North-East laga bura-buri khan karne dimaak aru purana katha yaad kora',
-    problemStatement: 'Smart India Hackathon 2026 • PS 26003 • MDoNER',
+    problemStatement: 'Ministry of Development of North Eastern Region (MDoNER)',
     patientMode: 'Dada-Dadi Mode',
     guardianMode: 'Caregiver Mode',
     switchMode: 'Mode Bodli Kora',

@@ -65,10 +65,10 @@ export default function CaregiverConsentView() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('mira_token') || 'demo'}`
+          'Authorization': `Bearer ${localStorage.getItem('mira_token') || ''}`
         },
         body: JSON.stringify({
-          caregiverUserId: 'usr-ananya-2',
+          caregiverUserId: localStorage.getItem('mira_active_user_id') || '',
           permissionLevel: level
         })
       });

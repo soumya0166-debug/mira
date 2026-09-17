@@ -54,8 +54,8 @@ class SyncManager {
     networkManager.setSyncStatus('syncing');
 
     try {
-      const token = typeof localStorage !== 'undefined' ? (localStorage.getItem('mira_token') || 'demo_token') : 'demo_token';
-      const activeUserId = typeof localStorage !== 'undefined' ? (localStorage.getItem('mira_active_user_id') || 'usr-radha-1') : 'usr-radha-1';
+      const token = typeof localStorage !== 'undefined' ? (localStorage.getItem('mira_token') || '') : '';
+      const activeUserId = typeof localStorage !== 'undefined' ? (localStorage.getItem('mira_active_user_id') || '') : '';
       const baseUrl = typeof window !== 'undefined' ? '' : 'http://localhost:3001';
 
       const response = await fetch(`${baseUrl}/api/sync/batch`, {
@@ -63,7 +63,7 @@ class SyncManager {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
-          'x-demo-user-id': activeUserId
+          'x-user-id': activeUserId
         },
         body: JSON.stringify({
           items: pendingItems,

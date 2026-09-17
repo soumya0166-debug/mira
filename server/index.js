@@ -14,46 +14,10 @@ app.use(express.json());
 
 // In-memory data store simulating isolated Supabase PostgreSQL database
 const db = {
-  users: [
-    {
-      id: 'usr-radha-1',
-      email: 'radha@mira.care',
-      passwordHash: hashPassword('password123'),
-      fullName: 'Radha Sharma',
-      preferredName: 'Radha Dadi',
-      role: 'elderly',
-      preferredLanguage: 'as', // Assamese / English default
-      voiceEnabled: true,
-      pin: '1234',
-      avatar: '👵',
-      createdAt: '2026-09-01T00:00:00.000Z'
-    },
-    {
-      id: 'usr-ananya-2',
-      email: 'ananya@mira.care',
-      passwordHash: hashPassword('password123'),
-      fullName: 'Ananya Sharma',
-      preferredName: 'Ananya',
-      role: 'caregiver',
-      preferredLanguage: 'en',
-      voiceEnabled: true,
-      pin: '1234',
-      avatar: '👩‍💼',
-      createdAt: '2026-09-01T00:00:00.000Z'
-    }
-  ],
+  users: [],
   sessions: new Map(), // token -> userId
-  caregiverConnections: [
-    {
-      id: 'conn-1',
-      elderlyUserId: 'usr-radha-1',
-      caregiverUserId: 'usr-ananya-2',
-      permissionLevel: 'FULL_SHARED_DATA', // NONE, BASIC_ACTIVITY, ROUTINES, INSIGHTS, FULL_SHARED_DATA
-      status: 'active',
-      relationship: 'Daughter & Primary Caregiver',
-      createdAt: '2026-09-01T00:00:00.000Z'
-    }
-  ],
+  caregiverConnections: [],
+  otps: new Map(), // email -> { code, expiresAt }
   gameSessions: new Map(), // userId -> array of sessions
   moodCheckins: new Map(),
   memories: new Map(),
@@ -78,22 +42,11 @@ function authenticateToken(req, res, next) {
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    // If no token, check for demo header or fallback to mock user for smooth prototype demo
-    const demoUserId = req.headers['x-demo-user-id'];
-    if (demoUserId && db.users.some(u => u.id === demoUserId)) {
-      req.user = db.users.find(u => u.id === demoUserId);
-      return next();
-    }
     return res.status(401).json({ error: 'Authentication required. Please sign in.' });
   }
 
   const userId = db.sessions.get(token);
   if (!userId) {
-    const demoUserId = req.headers['x-demo-user-id'];
-    if (token === 'demo_token' || (demoUserId && db.users.some(u => u.id === demoUserId))) {
-      req.user = db.users.find(u => u.id === (demoUserId || 'usr-radha-1')) || db.users[0];
-      return next();
-    }
     return res.status(403).json({ error: 'Invalid or expired session. Please sign in again.' });
   }
 
@@ -112,10 +65,53 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     service: 'MIND AI - NER Backend API',
     organization: 'Ministry of Development of North Eastern Region (MDoNER)',
-    sihStatement: '26003',
     geminiConfigured: Boolean(GEMINI_API_KEY),
     timestamp: new Date().toISOString()
   });
+});
+
+// --- OTP Verification Endpoints ---
+app.post('/api/auth/send-otp', (req, res) => {
+  const { email } = req.body;
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'A valid email address is required.' });
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
+
+  db.otps.set(normalizedEmail, { code, expiresAt });
+  console.log(`[AUTH] Verification OTP for ${normalizedEmail}: ${code}`);
+
+  res.json({
+    success: true,
+    message: 'Verification code generated successfully.',
+    otp: code,
+    expiresAt
+  });
+});
+
+app.post('/api/auth/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) {
+    return res.status(400).json({ error: 'Email and OTP code are required.' });
+  }
+  const normalizedEmail = email.trim().toLowerCase();
+  const record = db.otps.get(normalizedEmail);
+
+  if (!record) {
+    return res.status(400).json({ error: 'No verification code found. Please request a new code.' });
+  }
+  if (Date.now() > record.expiresAt) {
+    db.otps.delete(normalizedEmail);
+    return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+  }
+  if (record.code !== String(otp).trim()) {
+    return res.status(400).json({ error: 'Invalid verification code. Please check and try again.' });
+  }
+
+  db.otps.delete(normalizedEmail);
+  res.json({ success: true, message: 'Email successfully verified.' });
 });
 
 // --- Auth Endpoints ---

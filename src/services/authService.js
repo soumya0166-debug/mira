@@ -15,33 +15,8 @@ function hashPassword(password) {
   return 'h_' + Math.abs(hash).toString(16);
 }
 
-// Pre-seeded demo user accounts
-const INITIAL_DEMO_USERS = [
-  {
-    id: 'usr-ananya-1',
-    email: 'ananya@mira.care',
-    name: 'Ananya Sharma',
-    role: 'guardian',
-    passwordHash: hashPassword('password123'),
-    pin: '1234',
-    spaceId: 'space-radha-1', // Connected to Radha's space
-    relation: 'Daughter & Primary Caregiver',
-    avatar: '👩‍💼',
-    createdAt: '2026-09-01T00:00:00.000Z'
-  },
-  {
-    id: 'usr-radha-2',
-    email: 'radha@mira.care',
-    name: 'Radha Sharma',
-    role: 'patient',
-    passwordHash: hashPassword('password123'),
-    pin: '1234', // Elder-friendly 4-digit PIN
-    spaceId: 'space-radha-1', // Connected to Radha's space
-    preferredName: 'Radha Dadi',
-    avatar: '👵',
-    createdAt: '2026-09-01T00:00:00.000Z'
-  }
-];
+// Clean default users
+const INITIAL_DEMO_USERS = [];
 
 class AuthService {
   constructor() {
@@ -49,18 +24,15 @@ class AuthService {
   }
 
   initUsers() {
-    const existing = localStorage.getItem('mira_users');
-    if (!existing) {
-      localStorage.setItem('mira_users', JSON.stringify(INITIAL_DEMO_USERS));
-    }
+    // No-op for demo seeding
   }
 
   getUsers() {
     try {
       const data = localStorage.getItem('mira_users');
-      return data ? JSON.parse(data) : INITIAL_DEMO_USERS;
+      return data ? JSON.parse(data) : [];
     } catch {
-      return INITIAL_DEMO_USERS;
+      return [];
     }
   }
 
@@ -73,6 +45,12 @@ class AuthService {
    */
   getCurrentUser() {
     try {
+      const uid = localStorage.getItem('mira_active_user_id');
+      const users = this.getUsers();
+      if (uid) {
+        const found = users.find((u) => u.id === uid);
+        if (found) return found;
+      }
       const session = localStorage.getItem('mira_auth_session');
       return session ? JSON.parse(session) : null;
     } catch {
@@ -125,20 +103,6 @@ class AuthService {
     return { success: true, user: sessionUser };
   }
 
-  /**
-   * 1-Click Demo Login (Ananya or Radha)
-   */
-  loginAsDemo(role = 'guardian') {
-    const users = this.getUsers();
-    const user = users.find((u) => u.role === role);
-    if (user) {
-      const sessionUser = { ...user };
-      delete sessionUser.passwordHash;
-      localStorage.setItem('mira_auth_session', JSON.stringify(sessionUser));
-      return { success: true, user: sessionUser };
-    }
-    return { success: false, error: 'Demo user not found.' };
-  }
 
   /**
    * Register a new user and initialize their isolated space

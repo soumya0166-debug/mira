@@ -154,7 +154,7 @@ export default function VoiceRecorder({ onRecordingComplete, initialAudio = null
               className="btn-secondary"
               style={{ fontSize: '0.8rem', padding: '0.35rem 0.8rem' }}
             >
-              <Sparkles size={14} /> Add Demo Soothing Voice Note
+              <Sparkles size={14} /> Add Sample Soothing Voice Note
             </button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- MIND AI – NER Database Schema (Supabase PostgreSQL + Row Level Security)
--- Ministry of Development of North Eastern Region (MDoNER) - SIH 2026 PS ID: 26003
+-- Ministry of Development of North Eastern Region (MDoNER) Digital Health Initiative
 -- ==============================================================================
 
 -- Enable UUID Extension

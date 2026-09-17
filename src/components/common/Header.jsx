@@ -169,7 +169,7 @@ export default function Header() {
                 lineHeight: 1.2
               }}
             >
-              MDoNER • SIH 2026 PS 26003 • {isPatient ? `For ${patient.preferredName || patient.name}` : `Caregiver: ${guardian.name}`}
+              MDoNER Digital Health • {isPatient ? (patient?.preferredName || patient?.name ? `For ${patient.preferredName || patient.name}` : 'Elderly Mode') : (guardian?.name ? `Caregiver: ${guardian.name}` : 'Caregiver Mode')}
             </p>
           </div>
         </div>

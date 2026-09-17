@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   HeartHandshake,
   LogIn,
@@ -11,35 +11,14 @@ import {
   ArrowRight,
   Lock,
   Mail,
-  User
+  User,
+  KeyRound,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle,
+  Bell
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-
-// ─── Demo Account Quick-Login Cards ─────────────────────────────────────────
-const DEMO_CARDS = [
-  {
-    userId: 'user_ananya',
-    name: 'Ananya Sharma',
-    role: 'Guardian (Daughter)',
-    avatar: '👩‍💼',
-    loved: 'Radha Dadi',
-    memories: 4,
-    hint: 'PIN: 1234',
-    gradient: 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)',
-    border: '#f48fb1'
-  },
-  {
-    userId: 'user_vikram',
-    name: 'Dr. Vikram Patel',
-    role: 'Guardian (Son)',
-    avatar: '👨‍⚕️',
-    loved: 'Bapuji',
-    memories: 3,
-    hint: 'PIN: 1234',
-    gradient: 'linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%)',
-    border: '#9fa8da'
-  }
-];
 
 // ─── Shared input style ───────────────────────────────────────────────────────
 const inputStyle = {
@@ -87,14 +66,22 @@ function InputGroup({ icon: Icon, label, ...props }) {
 }
 
 // ─── Main Auth View ──────────────────────────────────────────────────────────
-export default function AuthView() {
-  const { login, loginById, register, isOnline } = useApp();
+export default function AuthView({ initialTab = 'signin' }) {
+  const {
+    login,
+    register,
+    generateAndSendOtp,
+    verifyOtp,
+    loginWithOtp,
+    isOnline
+  } = useApp();
 
-  const [tab, setTab] = useState('signin'); // 'signin' | 'signup'
+  const [tab, setTab] = useState(initialTab); // 'signin' | 'signup'
+  const [authMode, setAuthMode] = useState('form'); // 'form' | 'otp_verify' | 'forgot_otp'
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
-  const [quickLoadingId, setQuickLoadingId] = useState(null);
 
   // Sign-in form state
   const [signinEmail, setSigninEmail] = useState('');
@@ -109,73 +96,281 @@ export default function AuthView() {
   const [signupLovedHometown, setSignupLovedHometown] = useState('');
   const [signupLovedHobbies, setSignupLovedHobbies] = useState('');
 
+  // OTP Verification state
+  const [pendingSignupData, setPendingSignupData] = useState(null);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const [otpTimer, setOtpTimer] = useState(30);
+  const [activeNotification, setActiveNotification] = useState(null);
+
+  const otpInputRefs = useRef([]);
+
+  // Sync tab if initialTab changes
+  useEffect(() => {
+    if (initialTab) {
+      setTab(initialTab);
+      setAuthMode('form');
+      setError('');
+    }
+  }, [initialTab]);
+
+  // Resend OTP countdown timer
+  useEffect(() => {
+    let interval = null;
+    if ((authMode === 'otp_verify' || authMode === 'forgot_otp') && otpTimer > 0) {
+      interval = setInterval(() => {
+        setOtpTimer((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [authMode, otpTimer]);
+
+  // ── Handle Sign In ────────────────────────────────────────────────────────
   const handleSignIn = (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     if (!signinEmail.trim() || !signinCredential.trim()) {
-      setError('Please enter your email and PIN or password.');
+      setError('Please enter your email and password or 4-digit PIN.');
       return;
     }
     setLoading(true);
     setTimeout(() => {
-      const result = login(signinEmail, signinCredential);
-      if (!result.success) setError(result.error);
-      setLoading(false);
-    }, 400);
-  };
-
-  const handleQuickLogin = (userId) => {
-    setError('');
-    const email = userId === 'user_ananya' ? 'ananya.sharma@example.com' : 'vikram.patel@example.com';
-    setSigninEmail(email);
-    setSigninCredential('1234');
-    setQuickLoadingId(userId);
-    setTimeout(() => {
-      const res = loginById(userId);
-      if (!res?.success) {
-        setError(res?.error || 'Failed to sign in. Please try again.');
+      const result = login(signinEmail.trim(), signinCredential.trim());
+      if (!result.success) {
+        setError(result.error);
       }
-      setQuickLoadingId(null);
-    }, 250);
+      setLoading(false);
+    }, 350);
   };
 
-  const handleSignUp = (e) => {
+  // ── Handle Sign Up (Initiates OTP Verification) ─────────────────────────────
+  const handleSignUpInit = (e) => {
     e.preventDefault();
     setError('');
-    if (!signupName.trim()) { setError('Please enter your full name.'); return; }
-    if (!signupEmail.trim()) { setError('Please enter your email address.'); return; }
-    if (!signupPw && !signupPin) { setError('Please enter either a password or a 4-digit PIN.'); return; }
-    if (signupPin && !/^\d{4}$/.test(signupPin)) { setError('PIN must be exactly 4 digits.'); return; }
+    setSuccessMsg('');
 
-    const patientProfile = signupLovedName.trim() ? {
-      id: 'pat-' + Date.now(),
-      name: signupLovedName.trim(),
-      preferredName: signupLovedName.trim(),
-      birthYear: '',
-      age: '',
-      avatar: '👵',
-      hobbies: signupLovedHobbies.trim(),
-      childhoodHometown: signupLovedHometown.trim(),
-      emergencyContact: { name: '', phone: '', relationship: '' },
-      doctorInfo: { name: '', clinic: '', phone: '' },
-      notes: ''
-    } : null;
+    const trimmedName = signupName.trim();
+    const trimmedEmail = signupEmail.trim();
+
+    if (!trimmedName) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (!trimmedEmail || !trimmedEmail.includes('@')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!signupPw && !signupPin) {
+      setError('Please provide either a password or a 4-digit PIN for account security.');
+      return;
+    }
+    if (signupPin && !/^\d{4}$/.test(signupPin)) {
+      setError('PIN must be exactly 4 digits.');
+      return;
+    }
+
+    const patientProfile = signupLovedName.trim()
+      ? {
+          id: 'pat-' + Date.now(),
+          name: signupLovedName.trim(),
+          preferredName: signupLovedName.trim(),
+          birthYear: '',
+          age: '',
+          avatar: '👵',
+          hobbies: signupLovedHobbies.trim(),
+          childhoodHometown: signupLovedHometown.trim(),
+          emergencyContact: { name: '', phone: '', relationship: '' },
+          doctorInfo: { name: '', clinic: '', phone: '' },
+          notes: ''
+        }
+      : null;
+
+    const userData = {
+      name: trimmedName,
+      email: trimmedEmail,
+      password: signupPw || null,
+      pin: signupPin || null,
+      role: 'guardian',
+      lovedOneName: signupLovedName.trim(),
+      avatar: '🧑'
+    };
+
+    setLoading(true);
+
+    setTimeout(() => {
+      // Generate & send OTP
+      const otpResult = generateAndSendOtp(trimmedEmail);
+      if (!otpResult.success) {
+        setError(otpResult.error);
+        setLoading(false);
+        return;
+      }
+
+      setPendingSignupData({ userData, patientProfile });
+      setGeneratedOtp(otpResult.otp);
+      setOtpDigits(['', '', '', '', '', '']);
+      setOtpTimer(30);
+      setAuthMode('otp_verify');
+      setLoading(false);
+
+      // Show real-time verification alert notification banner
+      setActiveNotification({
+        code: otpResult.otp,
+        email: trimmedEmail,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }, 300);
+  };
+
+  // ── Handle OTP Digit Input ────────────────────────────────────────────────
+  const handleOtpDigitChange = (index, value) => {
+    // Only accept digits
+    const cleaned = value.replace(/\D/g, '');
+    if (!cleaned && value !== '') return;
+
+    const newDigits = [...otpDigits];
+
+    if (cleaned.length > 1) {
+      // Handle paste of whole OTP code (up to 6 digits)
+      const pasted = cleaned.slice(0, 6).split('');
+      for (let i = 0; i < 6; i++) {
+        newDigits[i] = pasted[i] || '';
+      }
+      setOtpDigits(newDigits);
+      const nextFocus = Math.min(pasted.length, 5);
+      if (otpInputRefs.current[nextFocus]) {
+        otpInputRefs.current[nextFocus].focus();
+      }
+      return;
+    }
+
+    newDigits[index] = cleaned;
+    setOtpDigits(newDigits);
+
+    // Auto-advance focus
+    if (cleaned && index < 5) {
+      if (otpInputRefs.current[index + 1]) {
+        otpInputRefs.current[index + 1].focus();
+      }
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      if (otpInputRefs.current[index - 1]) {
+        otpInputRefs.current[index - 1].focus();
+      }
+    }
+  };
+
+  // ── Resend OTP ─────────────────────────────────────────────────────────────
+  const handleResendOtp = () => {
+    if (otpTimer > 0) return;
+    setError('');
+    const targetEmail =
+      authMode === 'otp_verify' ? pendingSignupData?.userData?.email : signinEmail;
+
+    if (!targetEmail) {
+      setError('Email address is missing.');
+      return;
+    }
+
+    const res = generateAndSendOtp(targetEmail);
+    if (res.success) {
+      setGeneratedOtp(res.otp);
+      setOtpTimer(30);
+      setOtpDigits(['', '', '', '', '', '']);
+      setActiveNotification({
+        code: res.otp,
+        email: targetEmail,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      setSuccessMsg('A new verification code has been sent!');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } else {
+      setError(res.error || 'Failed to resend code.');
+    }
+  };
+
+  // ── Verify OTP & Finalize Registration ─────────────────────────────────────
+  const handleVerifyAndCompleteSignup = (e) => {
+    e.preventDefault();
+    setError('');
+    const enteredCode = otpDigits.join('');
+    if (enteredCode.length !== 6) {
+      setError('Please enter the complete 6-digit verification code.');
+      return;
+    }
 
     setLoading(true);
     setTimeout(() => {
-      const result = register(
-        {
-          name: signupName.trim(),
-          email: signupEmail.trim(),
-          password: signupPw || null,
-          pin: signupPin || null,
-          role: 'guardian',
-          lovedOneName: signupLovedName.trim(),
-          avatar: '🧑'
-        },
-        patientProfile
+      const email = pendingSignupData?.userData?.email;
+      const verifyResult = verifyOtp(email, enteredCode);
+
+      if (!verifyResult.success) {
+        setError(verifyResult.error || 'Invalid verification code. Please check and try again.');
+        setLoading(false);
+        return;
+      }
+
+      // Registration
+      const regResult = register(
+        pendingSignupData.userData,
+        pendingSignupData.patientProfile
       );
-      if (!result.success) setError(result.error);
+
+      if (!regResult.success) {
+        setError(regResult.error || 'Registration failed. Please try again.');
+        setLoading(false);
+      } else {
+        setSuccessMsg('Account verified successfully! Welcome to MIRA.');
+        setLoading(false);
+      }
+    }, 400);
+  };
+
+  // ── Handle Sign In with OTP (Forgot PIN / OTP Login) ───────────────────────
+  const handleInitiateOtpLogin = () => {
+    setError('');
+    setSuccessMsg('');
+    const targetEmail = signinEmail.trim();
+    if (!targetEmail || !targetEmail.includes('@')) {
+      setError('Please enter your registered email address first.');
+      return;
+    }
+    const res = generateAndSendOtp(targetEmail);
+    if (!res.success) {
+      setError(res.error);
+      return;
+    }
+    setGeneratedOtp(res.otp);
+    setOtpDigits(['', '', '', '', '', '']);
+    setOtpTimer(30);
+    setAuthMode('forgot_otp');
+    setActiveNotification({
+      code: res.otp,
+      email: targetEmail,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+  };
+
+  const handleVerifyOtpLogin = (e) => {
+    e.preventDefault();
+    setError('');
+    const enteredCode = otpDigits.join('');
+    if (enteredCode.length !== 6) {
+      setError('Please enter the complete 6-digit verification code.');
+      return;
+    }
+    setLoading(true);
+    setTimeout(() => {
+      const result = loginWithOtp(signinEmail.trim(), enteredCode);
+      if (!result.success) {
+        setError(result.error);
+      }
       setLoading(false);
     }, 400);
   };
@@ -188,24 +383,24 @@ export default function AuthView() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1rem',
+        padding: '1.5rem 1rem',
         fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif"
       }}
     >
       <div style={{ width: '100%', maxWidth: '480px' }}>
         {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '68px',
-              height: '68px',
-              borderRadius: '22px',
+              width: '64px',
+              height: '64px',
+              borderRadius: '20px',
               background: 'linear-gradient(135deg, var(--wine-700) 0%, var(--wine-900) 100%)',
-              boxShadow: '0 8px 24px rgba(107, 29, 47, 0.35)',
-              marginBottom: '1rem'
+              boxShadow: '0 8px 24px rgba(107, 29, 47, 0.28)',
+              marginBottom: '0.85rem'
             }}
           >
             <HeartHandshake size={32} style={{ color: '#fbc6d5' }} />
@@ -213,7 +408,7 @@ export default function AuthView() {
           <h1
             style={{
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: '2rem',
+              fontSize: '1.9rem',
               fontWeight: 700,
               color: 'var(--wine-800)',
               margin: 0
@@ -221,151 +416,139 @@ export default function AuthView() {
           >
             MIRA NER
           </h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.3rem', fontSize: '0.95rem' }}>
+          <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem', fontSize: '0.9rem' }}>
             Memory Intelligence &amp; Reminiscence Assistant
           </p>
-          {/* Offline badge */}
           {!isOnline && (
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.4rem',
-                marginTop: '0.6rem',
-                padding: '0.3rem 0.75rem',
+                marginTop: '0.5rem',
+                padding: '0.25rem 0.75rem',
                 borderRadius: '9999px',
                 backgroundColor: '#eff6ff',
                 border: '1px solid #93c5fd',
                 color: '#1d4ed8',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 fontWeight: 600
               }}
             >
-              <WifiOff size={13} /> Offline Mode — Data stays local &amp; private
+              <WifiOff size={13} /> Offline Mode — Local &amp; Private Vault
             </div>
           )}
         </div>
 
-        {/* Quick Demo Login Cards */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '0.75rem',
-            marginBottom: '1.5rem'
-          }}
-        >
-          {DEMO_CARDS.map((card) => (
-            <button
-              key={card.userId}
-              onClick={() => handleQuickLogin(card.userId)}
-              disabled={!!quickLoadingId}
+        {/* Tab Navigation (only when on form view) */}
+        {authMode === 'form' && (
+          <div
+            style={{
+              display: 'flex',
+              backgroundColor: 'var(--ivory-soft)',
+              borderRadius: '14px',
+              padding: '4px',
+              marginBottom: '1.25rem',
+              border: '1px solid var(--ivory-border)'
+            }}
+          >
+            {[
+              { key: 'signin', label: 'Sign In', icon: LogIn },
+              { key: 'signup', label: 'Create Account', icon: UserPlus }
+            ].map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setTab(key);
+                  setError('');
+                  setSuccessMsg('');
+                  setActiveNotification(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem',
+                  borderRadius: '11px',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  backgroundColor: tab === key ? '#ffffff' : 'transparent',
+                  color: tab === key ? 'var(--wine-800)' : 'var(--text-muted)',
+                  boxShadow: tab === key ? '0 2px 8px rgba(107,29,47,0.10)' : 'none',
+                  transition: 'all 0.2s ease',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <Icon size={15} />
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Real-time Verification Alert Notification Simulation */}
+        {activeNotification && (
+          <div
+            style={{
+              backgroundColor: '#064e3b',
+              color: '#f0fdf4',
+              borderRadius: '14px',
+              padding: '0.85rem 1rem',
+              marginBottom: '1rem',
+              boxShadow: '0 6px 20px rgba(6, 78, 59, 0.25)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.75rem',
+              animation: 'fadeIn 0.3s ease-out',
+              border: '1px solid #059669'
+            }}
+          >
+            <div
               style={{
-                background: card.gradient,
-                border: `1.5px solid ${card.border}`,
-                borderRadius: '16px',
-                padding: '1rem',
-                textAlign: 'left',
-                cursor: quickLoadingId ? 'wait' : 'pointer',
-                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                opacity: quickLoadingId === card.userId ? 0.7 : 1,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                backgroundColor: '#047857',
+                borderRadius: '8px',
+                padding: '0.4rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
-              <div style={{ fontSize: '1.8rem', lineHeight: 1, marginBottom: '0.4rem' }}>
-                {quickLoadingId === card.userId ? '⏳' : card.avatar}
+              <Bell size={18} color="#a7f3d0" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#a7f3d0', fontWeight: 700 }}>
+                  Verification Code (OTP)
+                </span>
+                <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>{activeNotification.time}</span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--wine-900)', lineHeight: 1.2 }}>
-                {card.name}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                {card.role}
+              <div style={{ fontSize: '0.88rem', lineHeight: 1.4 }}>
+                Sent to <strong>{activeNotification.email}</strong>
               </div>
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
+                  display: 'inline-block',
+                  backgroundColor: '#ffffff',
+                  color: '#064e3b',
+                  fontSize: '1.25rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.25em',
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '8px',
                   marginTop: '0.5rem',
-                  fontSize: '0.72rem',
-                  color: 'var(--wine-700)',
-                  fontWeight: 600
+                  fontFamily: 'monospace'
                 }}
               >
-                <Sparkles size={11} />
-                For: {card.loved} · {card.memories} memories
+                {activeNotification.code}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                {card.hint}
-              </div>
-            </button>
-          ))}
-        </div>
+            </div>
+          </div>
+        )}
 
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            marginBottom: '1.25rem',
-            color: 'var(--text-muted)',
-            fontSize: '0.82rem'
-          }}
-        >
-          <div style={{ flex: 1, height: '1px', background: 'var(--ivory-border)' }} />
-          <span>or sign in to your account</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--ivory-border)' }} />
-        </div>
-
-        {/* Tab Bar */}
-        <div
-          style={{
-            display: 'flex',
-            backgroundColor: 'var(--ivory-soft)',
-            borderRadius: '14px',
-            padding: '4px',
-            marginBottom: '1.5rem',
-            border: '1px solid var(--ivory-border)'
-          }}
-        >
-          {[
-            { key: 'signin', label: 'Sign In', icon: LogIn },
-            { key: 'signup', label: 'Create Account', icon: UserPlus }
-          ].map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => { setTab(key); setError(''); }}
-              style={{
-                flex: 1,
-                padding: '0.6rem',
-                borderRadius: '11px',
-                fontWeight: 600,
-                fontSize: '0.88rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.4rem',
-                backgroundColor: tab === key ? '#ffffff' : 'transparent',
-                color: tab === key ? 'var(--wine-800)' : 'var(--text-muted)',
-                boxShadow: tab === key ? '0 2px 8px rgba(107,29,47,0.10)' : 'none',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <Icon size={15} />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Card */}
+        {/* Main Card Container */}
         <div
           style={{
             background: '#ffffff',
@@ -375,7 +558,7 @@ export default function AuthView() {
             padding: '1.75rem'
           }}
         >
-          {/* Error */}
+          {/* Alerts */}
           {error && (
             <div
               style={{
@@ -385,20 +568,43 @@ export default function AuthView() {
                 padding: '0.75rem 1rem',
                 marginBottom: '1.25rem',
                 color: '#dc2626',
-                fontSize: '0.9rem',
+                fontSize: '0.88rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem'
               }}
             >
-              ⚠️ {error}
+              <AlertCircle size={16} />
+              {error}
             </div>
           )}
 
-          {/* ── Sign In Tab ── */}
-          {tab === 'signin' && (
+          {successMsg && (
+            <div
+              style={{
+                backgroundColor: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                borderRadius: '10px',
+                padding: '0.75rem 1rem',
+                marginBottom: '1.25rem',
+                color: '#047857',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <CheckCircle2 size={16} />
+              {successMsg}
+            </div>
+          )}
+
+          {/* ═════════════════════════════════════════════════════════════════════
+              VIEW 1: SIGN IN FORM
+             ═════════════════════════════════════════════════════════════════════ */}
+          {authMode === 'form' && tab === 'signin' && (
             <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-              <div style={{ marginBottom: '0.25rem' }}>
+              <div>
                 <h2
                   style={{
                     fontFamily: "'Playfair Display', Georgia, serif",
@@ -410,7 +616,7 @@ export default function AuthView() {
                   Welcome back 👋
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '0.2rem' }}>
-                  Sign in to continue caring for your loved one.
+                  Sign in to your private elder care vault.
                 </p>
               </div>
 
@@ -418,7 +624,7 @@ export default function AuthView() {
                 icon={Mail}
                 label="Email Address or Name"
                 type="text"
-                placeholder="ananya.sharma@example.com"
+                placeholder="name@example.com"
                 value={signinEmail}
                 onChange={(e) => setSigninEmail(e.target.value)}
                 autoComplete="username"
@@ -426,7 +632,25 @@ export default function AuthView() {
               />
 
               <div>
-                <label style={labelStyle}>Password or 4-Digit PIN</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label style={labelStyle}>Password or 4-Digit PIN</label>
+                  <button
+                    type="button"
+                    onClick={handleInitiateOtpLogin}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--wine-700)',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      padding: 0,
+                      marginBottom: '0.35rem'
+                    }}
+                  >
+                    Sign in with OTP?
+                  </button>
+                </div>
                 <div style={{ position: 'relative' }}>
                   <Lock
                     size={16}
@@ -442,7 +666,7 @@ export default function AuthView() {
                   <input
                     style={inputStyle}
                     type={showPw ? 'text' : 'password'}
-                    placeholder="Enter PIN or password"
+                    placeholder="Enter password or PIN"
                     value={signinCredential}
                     onChange={(e) => setSigninCredential(e.target.value)}
                     autoComplete="current-password"
@@ -475,17 +699,11 @@ export default function AuthView() {
                 className="btn-primary"
                 style={{ width: '100%', justifyContent: 'center', marginTop: '0.25rem' }}
               >
-                {loading ? (
-                  'Signing in…'
-                ) : (
-                  <>
-                    <LogIn size={17} /> Sign In
-                  </>
-                )}
+                {loading ? 'Signing in…' : <><LogIn size={17} /> Sign In</>}
               </button>
 
               <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                No account yet?{' '}
+                Don't have an account?{' '}
                 <button
                   type="button"
                   onClick={() => { setTab('signup'); setError(''); }}
@@ -497,10 +715,12 @@ export default function AuthView() {
             </form>
           )}
 
-          {/* ── Sign Up Tab ── */}
-          {tab === 'signup' && (
-            <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ marginBottom: '0.25rem' }}>
+          {/* ═════════════════════════════════════════════════════════════════════
+              VIEW 2: SIGN UP FORM (INITIATES VERIFICATION)
+             ═════════════════════════════════════════════════════════════════════ */}
+          {authMode === 'form' && tab === 'signup' && (
+            <form onSubmit={handleSignUpInit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
                 <h2
                   style={{
                     fontFamily: "'Playfair Display', Georgia, serif",
@@ -512,11 +732,11 @@ export default function AuthView() {
                   Create your free account
                 </h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '0.2rem' }}>
-                  Start your loved one's personalised care memory vault.
+                  A verification code will be sent to your email to verify your identity.
                 </p>
               </div>
 
-              {/* Guardian Section */}
+              {/* Guardian Account Section */}
               <div
                 style={{
                   padding: '0.85rem',
@@ -529,7 +749,7 @@ export default function AuthView() {
                 }}
               >
                 <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--wine-700)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  👩‍💼 Your Guardian / Caregiver Account
+                  👩‍💼 Guardian / Caregiver Profile
                 </p>
                 <InputGroup
                   icon={User}
@@ -565,15 +785,15 @@ export default function AuthView() {
                     </div>
                   </div>
                   <div>
-                    <label style={labelStyle}>4-Digit PIN <span style={{ fontWeight: 400 }}>(easy login)</span></label>
+                    <label style={labelStyle}>4-Digit PIN <span style={{ fontWeight: 400 }}>(quick login)</span></label>
                     <div style={{ position: 'relative' }}>
-                      <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--wine-600)', pointerEvents: 'none' }} />
+                      <KeyRound size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--wine-600)', pointerEvents: 'none' }} />
                       <input
                         style={inputStyle}
                         type="text"
                         inputMode="numeric"
                         maxLength={4}
-                        placeholder="1234"
+                        placeholder="4-digit PIN"
                         value={signupPin}
                         onChange={(e) => setSignupPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       />
@@ -582,7 +802,7 @@ export default function AuthView() {
                 </div>
               </div>
 
-              {/* Patient Section (Optional) */}
+              {/* Patient Profile Section (Optional) */}
               <div
                 style={{
                   padding: '0.85rem',
@@ -595,11 +815,11 @@ export default function AuthView() {
                 }}
               >
                 <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--wine-700)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  👵 Your Loved One's Profile <span style={{ fontWeight: 400, textTransform: 'none', color: 'var(--text-muted)' }}>(optional — can add later)</span>
+                  👵 Loved One's Profile <span style={{ fontWeight: 400, textTransform: 'none', color: 'var(--text-muted)' }}>(optional)</span>
                 </p>
                 <InputGroup
                   icon={User}
-                  label="Elder's Full Name"
+                  label="Elder's Name"
                   type="text"
                   placeholder="e.g. Kamla Devi"
                   value={signupLovedName}
@@ -609,15 +829,15 @@ export default function AuthView() {
                   icon={User}
                   label="Childhood Hometown"
                   type="text"
-                  placeholder="e.g. Varanasi & Allahabad"
+                  placeholder="e.g. Guwahati / Shillong"
                   value={signupLovedHometown}
                   onChange={(e) => setSignupLovedHometown(e.target.value)}
                 />
                 <InputGroup
                   icon={Sparkles}
-                  label="Favourite Comforting Topics"
+                  label="Favourite Activities / Music"
                   type="text"
-                  placeholder="e.g. Classical music, gardening, cooking"
+                  placeholder="e.g. Bihu songs, gardening, tea"
                   value={signupLovedHobbies}
                   onChange={(e) => setSignupLovedHobbies(e.target.value)}
                 />
@@ -629,13 +849,7 @@ export default function AuthView() {
                 className="btn-primary"
                 style={{ width: '100%', justifyContent: 'center' }}
               >
-                {loading ? (
-                  'Creating account…'
-                ) : (
-                  <>
-                    <UserPlus size={17} /> Create Account <ArrowRight size={15} />
-                  </>
-                )}
+                {loading ? 'Sending verification code…' : <>Continue to Verification <ArrowRight size={16} /></>}
               </button>
 
               <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -650,9 +864,144 @@ export default function AuthView() {
               </p>
             </form>
           )}
+
+          {/* ═════════════════════════════════════════════════════════════════════
+              VIEW 3: OTP VERIFICATION SCREEN (FOR SIGNUP & FORGOT PIN)
+             ═════════════════════════════════════════════════════════════════════ */}
+          {(authMode === 'otp_verify' || authMode === 'forgot_otp') && (
+            <form
+              onSubmit={authMode === 'otp_verify' ? handleVerifyAndCompleteSignup : handleVerifyOtpLogin}
+              style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+            >
+              <div style={{ textAlign: 'center' }}>
+                <div
+                  style={{
+                    width: '52px',
+                    height: '52px',
+                    borderRadius: '16px',
+                    backgroundColor: '#fce4ec',
+                    color: 'var(--wine-800)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '0.75rem'
+                  }}
+                >
+                  <KeyRound size={26} />
+                </div>
+                <h2
+                  style={{
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                    fontSize: '1.35rem',
+                    color: 'var(--wine-800)',
+                    margin: 0
+                  }}
+                >
+                  {authMode === 'otp_verify' ? 'Verify Your Email' : 'Sign In with Verification Code'}
+                </h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                  Enter the 6-digit security code sent to:
+                  <br />
+                  <strong style={{ color: 'var(--wine-900)' }}>
+                    {authMode === 'otp_verify' ? pendingSignupData?.userData?.email : signinEmail}
+                  </strong>
+                </p>
+              </div>
+
+              {/* Segmented 6-digit OTP Input */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {otpDigits.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={(el) => (otpInputRefs.current[idx] = el)}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={digit}
+                    onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e.target.value)}
+                    style={{
+                      width: '46px',
+                      height: '52px',
+                      textAlign: 'center',
+                      fontSize: '1.4rem',
+                      fontWeight: 700,
+                      borderRadius: '12px',
+                      border: digit ? '2px solid var(--wine-700)' : '1.5px solid var(--ivory-border)',
+                      backgroundColor: digit ? '#fff5f7' : 'var(--ivory-soft)',
+                      color: 'var(--wine-900)',
+                      outline: 'none',
+                      transition: 'all 0.15s ease'
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <button
+                  type="submit"
+                  disabled={loading || otpDigits.join('').length !== 6}
+                  className="btn-primary"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {loading
+                    ? 'Verifying…'
+                    : authMode === 'otp_verify'
+                    ? 'Verify & Complete Account Creation'
+                    : 'Verify & Sign In'}
+                </button>
+
+                {/* Resend button & timer */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthMode('form');
+                      setError('');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      cursor: 'pointer',
+                      padding: 0
+                    }}
+                  >
+                    ← Edit Details
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={otpTimer > 0}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: otpTimer > 0 ? 'var(--text-muted)' : 'var(--wine-700)',
+                      fontWeight: 600,
+                      cursor: otpTimer > 0 ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                      padding: 0
+                    }}
+                  >
+                    <RotateCcw size={13} />
+                    {otpTimer > 0 ? `Resend code in ${otpTimer}s` : 'Resend Code'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
         </div>
 
-        {/* Privacy reassurance */}
+        {/* Privacy reassurance footer */}
         <div
           style={{
             display: 'flex',
@@ -665,7 +1014,7 @@ export default function AuthView() {
           }}
         >
           <ShieldCheck size={14} style={{ color: 'var(--wine-600)' }} />
-          All data is stored privately on this device. No servers. No tracking.
+          Zero external tracking. Personal memory data is stored privately on your device.
         </div>
       </div>
     </div>

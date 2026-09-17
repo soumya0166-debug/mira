@@ -157,6 +157,24 @@ export function AppProvider({ children }) {
     return result;
   };
 
+  const generateAndSendOtp = (email) => {
+    return storageService.generateAndSendOtp(email);
+  };
+
+  const verifyOtp = (email, code) => {
+    return storageService.verifyOtp(email, code);
+  };
+
+  const loginWithOtp = (email, code) => {
+    const result = storageService.loginWithOtp(email, code);
+    if (result.success) {
+      setCurrentUser(result.user);
+      reloadUserData();
+      audioService.playSuccessChime();
+    }
+    return result;
+  };
+
   const logout = () => {
     storageService.logout();
     setCurrentUser(null);
@@ -388,6 +406,9 @@ export function AppProvider({ children }) {
         login,
         loginById,
         register,
+        generateAndSendOtp,
+        verifyOtp,
+        loginWithOtp,
         logout,
         switchUser,
         availableUsers,
