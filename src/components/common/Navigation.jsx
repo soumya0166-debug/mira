@@ -17,26 +17,46 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export default function Navigation() {
-  const { activeTab, setActiveTab, t } = useApp();
+  const { activeTab, setActiveTab, t, currentUser, mode } = useApp();
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
-  const mainNavItems = [
-    { id: 'home', label: t.nav?.home || 'Home', icon: Home },
-    { id: 'games', label: t.nav?.games || 'Games', icon: Puzzle },
-    { id: 'mira', label: 'MIRA AI', icon: Mic, highlight: true },
-    { id: 'memories', label: t.nav?.memory || 'Memories', icon: Sparkles },
-    { id: 'routines', label: t.nav?.routine || 'Routine', icon: CalendarCheck },
-    { id: 'more', label: t.nav?.more || 'More', icon: Menu, isMore: true }
-  ];
+  const isCaregiver = currentUser?.role === 'guardian' || mode === 'guardian';
 
-  const moreItems = [
-    { id: 'wellness', label: t.nav?.progress || 'Wellness & Progress', icon: Activity },
-    { id: 'caregiver', label: t.nav?.caregiver || 'Caregiver Consent', icon: ShieldCheck },
-    { id: 'notifications', label: t.nav?.notifications || 'Notifications', icon: Bell },
-    { id: 'profile', label: t.nav?.profile || 'Profile', icon: User },
-    { id: 'settings', label: t.nav?.settings || 'Settings', icon: Settings },
-    { id: 'privacy', label: t.nav?.privacy || 'Privacy & Security', icon: Shield }
-  ];
+  // ── Segregated Navigation Items ──
+  const mainNavItems = isCaregiver
+    ? [
+        { id: 'guardian', label: 'Caregiver Hub', icon: ShieldCheck },
+        { id: 'wellness', label: 'Cognitive Trends', icon: Activity },
+        { id: 'mira', label: 'MIRA AI', icon: Mic, highlight: true },
+        { id: 'memories', label: t.nav?.memory || 'Memories', icon: Sparkles },
+        { id: 'routines', label: t.nav?.routine || 'Care Plan', icon: CalendarCheck },
+        { id: 'more', label: t.nav?.more || 'More', icon: Menu, isMore: true }
+      ]
+    : [
+        { id: 'home', label: t.nav?.home || 'Home', icon: Home },
+        { id: 'games', label: t.nav?.games || 'Games', icon: Puzzle },
+        { id: 'mira', label: 'MIRA AI', icon: Mic, highlight: true },
+        { id: 'memories', label: t.nav?.memory || 'Memories', icon: Sparkles },
+        { id: 'routines', label: t.nav?.routine || 'Routine', icon: CalendarCheck },
+        { id: 'more', label: t.nav?.more || 'More', icon: Menu, isMore: true }
+      ];
+
+  const moreItems = isCaregiver
+    ? [
+        { id: 'caregiver', label: 'Consent Tiers', icon: Shield },
+        { id: 'games', label: 'Games Suite', icon: Puzzle },
+        { id: 'home', label: 'Elder View Preview', icon: Home },
+        { id: 'notifications', label: t.nav?.notifications || 'Notifications', icon: Bell },
+        { id: 'profile', label: t.nav?.profile || 'Profile', icon: User },
+        { id: 'settings', label: t.nav?.settings || 'Settings', icon: Settings },
+        { id: 'privacy', label: t.nav?.privacy || 'Privacy & Security', icon: Shield }
+      ]
+    : [
+        { id: 'profile', label: 'My Profile & ICE', icon: User },
+        { id: 'notifications', label: t.nav?.notifications || 'Reminders', icon: Bell },
+        { id: 'settings', label: 'Language & Display', icon: Settings },
+        { id: 'privacy', label: t.nav?.privacy || 'Privacy & Security', icon: Shield }
+      ];
 
   return (
     <>

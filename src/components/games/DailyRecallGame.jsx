@@ -16,6 +16,7 @@ export default function DailyRecallGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [errors, setErrors] = useState(0);
 
   // Dynamic questions according to active regional language
   const questions = getGameContent('daily-recall', language) || [];
@@ -25,6 +26,7 @@ export default function DailyRecallGame({ onNextActivity }) {
     setCurrentIdx(0);
     setSelectedAnswer(null);
     setScore(0);
+    setErrors(0);
     setIsCompleted(false);
     setAdaptiveInfo(null);
     setStartTime(Date.now());
@@ -52,6 +54,7 @@ export default function DailyRecallGame({ onNextActivity }) {
     setSelectedAnswer(index);
 
     const isCorrect = index === currentQ.correct;
+    let nextErrors = errors;
     if (isCorrect) {
       setScore(s => s + 25);
       audioService.playSuccessChime();
@@ -59,6 +62,8 @@ export default function DailyRecallGame({ onNextActivity }) {
         audioService.speakText('Wonderful! That is correct.', language);
       }
     } else {
+      nextErrors = errors + 1;
+      setErrors(nextErrors);
       audioService.playSoftClick();
       if (voiceEnabled) {
         audioService.speakText('Good try! Let us move to the next question.', language);
@@ -70,15 +75,17 @@ export default function DailyRecallGame({ onNextActivity }) {
         setCurrentIdx(idx => idx + 1);
         setSelectedAnswer(null);
       } else {
-        finishGame(isCorrect ? score + 25 : score);
+        finishGame(isCorrect ? score + 25 : score, nextErrors);
       }
     }, 1400);
   };
 
-  const finishGame = async (finalScore) => {
+  const finishGame = async (finalScore, finalErrors = errors) => {
     setIsCompleted(true);
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const accuracy = Math.round((finalScore / 100) * 100);
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, questions.length));
+    const accuracy = Math.max(0, Math.min(100, Math.round(((questions.length - finalErrors) / Math.max(1, questions.length)) * 100)));
 
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
@@ -95,7 +102,11 @@ export default function DailyRecallGame({ onNextActivity }) {
       difficulty,
       score: finalScore,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: finalErrors,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: questions.length
     });
 

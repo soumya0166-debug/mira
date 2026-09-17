@@ -111,10 +111,15 @@ export default function MemoryCard({ memory, onOpenSlideshow }) {
         )}
       </div>
 
-      <div style={{ marginBottom: '0.75rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
         <span className="badge badge-wine" style={{ fontSize: '0.75rem' }}>
           <Tag size={12} /> {memory.category}
         </span>
+        {memory.relationshipLabel && (
+          <span className="badge" style={{ backgroundColor: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0', fontSize: '0.75rem', fontWeight: 600 }}>
+            👥 {memory.relationshipLabel}
+          </span>
+        )}
       </div>
 
       {/* Story excerpt */}

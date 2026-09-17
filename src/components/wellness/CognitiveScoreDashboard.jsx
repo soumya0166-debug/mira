@@ -29,7 +29,8 @@ export default function CognitiveScoreDashboard() {
     patient, 
     cdrAssessments, 
     latestCDRAssessment, 
-    cdrTrend 
+    cdrTrend,
+    gameSessions = []
   } = useApp();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,15 +38,15 @@ export default function CognitiveScoreDashboard() {
 
   // Active screening data to display (either user-selected from history or latest)
   const activeAssessment = selectedHistoryItem || latestCDRAssessment || {
-    memory_score: 1.0,
-    orientation_score: 0.5,
-    judgment_score: 1.0,
-    community_score: 0.5,
-    home_hobbies_score: 1.0,
-    personal_care_score: 0.0,
-    total_score: 4.0,
-    observed_level: 'Very mild',
-    assessment_date: '2026-09-14T09:45:00.000Z'
+    memory_score: 0,
+    orientation_score: 0,
+    judgment_score: 0,
+    community_score: 0,
+    home_hobbies_score: 0,
+    personal_care_score: 0,
+    total_score: 0.0,
+    observed_level: 'Not yet assessed',
+    assessment_date: null
   };
 
   const levelInfo = getObservedLevel(activeAssessment.total_score);
@@ -60,22 +61,39 @@ export default function CognitiveScoreDashboard() {
     { name: 'Personal Care', code: 'PC', score: activeAssessment.personal_care_score ?? activeAssessment.personal_care ?? 0, icon: '🧼', desc: 'Dressing, hygiene & independent meals' }
   ];
 
-  // 7-Day Trend Mock Data for Daily Engagement Index
-  const trendData = [
-    { day: 'Mon', score: 78 },
-    { day: 'Tue', score: 82 },
-    { day: 'Wed', score: 80 },
-    { day: 'Thu', score: 85 },
-    { day: 'Fri', score: 84 },
-    { day: 'Sat', score: 90 },
-    { day: 'Sun', score: cognitiveScore.overall }
-  ];
+  // 7-Day Trend computed dynamically from real sessions and activities
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const today = new Date();
+  
+  const trendData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    const dayLabel = dayNames[d.getDay()];
+    
+    // Find real sessions on this date
+    const daySessions = (gameSessions || []).filter(s => (s.date === dateStr || (s.completedAt && s.completedAt.startsWith(dateStr))));
+    
+    let dayScore = 0;
+    if (i === 6) {
+      // Today
+      dayScore = cognitiveScore.hasRealActivity ? cognitiveScore.overall : (daySessions.length > 0 ? Math.round(daySessions.reduce((a, s) => a + Number(s.score || 0), 0) / daySessions.length) : 0);
+    } else if (daySessions.length > 0) {
+      dayScore = Math.round(daySessions.reduce((a, s) => a + Number(s.score || 0), 0) / daySessions.length);
+    }
+    
+    return {
+      day: dayLabel,
+      score: Math.max(0, Math.min(100, dayScore)),
+      hasData: daySessions.length > 0 || (i === 6 && cognitiveScore.hasRealActivity)
+    };
+  });
 
-  // SVG dimensions for daily engagement chart
+  // SVG dimensions for daily engagement chart (Clamped 0 to 100)
   const width = 540;
   const height = 180;
   const padding = 35;
-  const minScore = 60;
+  const minScore = 0;
   const maxScore = 100;
 
   const points = trendData.map((d, i) => {
@@ -555,6 +573,74 @@ export default function CognitiveScoreDashboard() {
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
             Participation in card matching, attention sequences, and word recall.
           </p>
+        </div>
+      </div>
+
+      {/* 7-Day Longitudinal Daily Engagement Trend Chart */}
+      <div className="mira-card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div>
+            <h3 style={{ margin: 0, color: 'var(--wine-900)', fontSize: '1.15rem' }}>
+              7-Day Activity & Cognitive Pacing Trend (0–100)
+            </h3>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+              Calculated dynamically from real completed activities, memory reflections, and game scores.
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span className="badge" style={{ backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontWeight: 700 }}>
+              Today: {cognitiveScore.overall} / 100
+            </span>
+          </div>
+        </div>
+
+        <div style={{ width: '100%', overflowX: 'auto' }}>
+          <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', maxHeight: '200px' }}>
+            <defs>
+              <linearGradient id="scoreAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--wine-700)" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="var(--wine-700)" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Horizontal Grid lines for 0, 25, 50, 75, 100 */}
+            {[0, 25, 50, 75, 100].map(val => {
+              const yVal = height - padding - ((val - minScore) / (maxScore - minScore)) * (height - 2 * padding);
+              return (
+                <g key={val}>
+                  <line x1={padding} y1={yVal} x2={width - padding} y2={yVal} stroke="#e2e8f0" strokeDasharray="3 3" />
+                  <text x={padding - 8} y={yVal + 3} textAnchor="end" fontSize="10" fill="#94a3b8">{val}</text>
+                </g>
+              );
+            })}
+
+            {/* Filled Area */}
+            <path d={areaD} fill="url(#scoreAreaGrad)" />
+
+            {/* Trend Line */}
+            <path d={pathD} fill="none" stroke="var(--wine-700)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* Points & Labels */}
+            {points.map((p, idx) => (
+              <g key={idx}>
+                <circle cx={p.x} cy={p.y} r={p.hasData ? 5 : 3} fill={p.hasData ? "var(--wine-700)" : "#94a3b8"} stroke="#ffffff" strokeWidth="2" />
+                <text x={p.x} y={height - 10} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-main)">
+                  {p.day}
+                </text>
+                {p.hasData && (
+                  <text x={p.x} y={p.y - 10} textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--wine-900)">
+                    {p.score}
+                  </text>
+                )}
+              </g>
+            ))}
+          </svg>
+        </div>
+
+        {/* Clear Medical Disclaimer Notice */}
+        <div style={{ marginTop: '1.25rem', padding: '0.75rem 1rem', borderRadius: '8px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.82rem', color: '#92400e' }}>
+          <ShieldCheck size={18} style={{ color: '#d97706', flexShrink: 0 }} />
+          <span><strong>MIRA/PCPS is not a medical diagnosis.</strong> Scores represent daily engagement and recreational cognitive stimulation levels.</span>
         </div>
       </div>
 

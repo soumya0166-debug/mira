@@ -23,8 +23,25 @@ export function AppProvider({ children }) {
   const loadSettings = useCallback(() => storageService.getSettings(), []);
   const [language, setLanguageState] = useState(() => loadSettings().language || 'en');
   const [fontSize, setFontSizeState] = useState(() => loadSettings().fontSize || 'normal');
-  const [mode, setModeState] = useState(() => loadSettings().mode || 'guardian');
-  const [activeTab, setActiveTab] = useState('home');
+  const [mode, setModeState] = useState(() => {
+    if (currentUser?.role === 'patient') return 'patient';
+    if (currentUser?.role === 'guardian') return 'guardian';
+    return loadSettings().mode || 'guardian';
+  });
+  const [activeTab, setActiveTabState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mira_active_tab');
+      if (saved) return saved;
+    } catch {}
+    return currentUser?.role === 'guardian' ? 'guardian' : 'home';
+  });
+
+  const setActiveTab = useCallback((tab) => {
+    setActiveTabState(tab);
+    try {
+      localStorage.setItem('mira_active_tab', tab);
+    } catch {}
+  }, []);
 
   // ── Core App Data ──
   const [patient, setPatientState] = useState(() => storageService.getPatient());
@@ -110,9 +127,11 @@ export function AppProvider({ children }) {
   // ── Reload all state when user changes ──
   const reloadUserData = useCallback(() => {
     const s = storageService.getSettings();
+    const curr = storageService.getCurrentUser();
     setLanguageState(s.language || 'en');
     setFontSizeState(s.fontSize || 'normal');
-    setModeState(s.mode || 'guardian');
+    const resolvedMode = curr?.role === 'patient' ? 'patient' : (curr?.role === 'guardian' ? 'guardian' : (s.mode || 'guardian'));
+    setModeState(resolvedMode);
     setPatientState(storageService.getPatient());
     setGuardianState(storageService.getGuardian());
     setMemoriesState(storageService.getMemories());
@@ -120,8 +139,13 @@ export function AppProvider({ children }) {
     setGameSessionsState(storageService.getGameSessions());
     setCareNotesState(storageService.getCareNotes());
     setCdrAssessmentsState(storageService.getCDRAssessments());
-    setActiveTab('home');
-  }, []);
+    const defaultTab = curr?.role === 'guardian' ? 'guardian' : 'home';
+    let savedTab = null;
+    try {
+      savedTab = localStorage.getItem('mira_active_tab');
+    } catch {}
+    setActiveTab(savedTab || defaultTab);
+  }, [setActiveTab]);
 
   // Translation dictionary with deep recursive fallback proxy across all 10 NER languages
   const t = useMemo(() => getTranslationProxy(language), [language]);
@@ -185,6 +209,10 @@ export function AppProvider({ children }) {
     setGameSessionsState([]);
     setCareNotesState([]);
     setCdrAssessmentsState([]);
+    try {
+      localStorage.removeItem('mira_active_tab');
+      window.history.replaceState(null, '', '/');
+    } catch {}
     audioService.playSoftClick();
   };
 
@@ -348,27 +376,45 @@ export function AppProvider({ children }) {
 
   // ── Cognitive Score ──
   const computeCognitiveScore = () => {
-    const totalRoutines = routines.length || 1;
+    const totalRoutines = routines.length;
     const completedRoutines = routines.filter((r) => r.completedToday).length;
-    const routineScore = Math.round((completedRoutines / totalRoutines) * 100);
+    const routineScore = totalRoutines > 0 ? Math.round((completedRoutines / totalRoutines) * 100) : 0;
 
     const totalReactions = memories.reduce((acc, m) => acc + (m.reactions?.length || 0), 0);
-    const memoryScore = Math.min(100, 60 + Math.min(40, totalReactions * 10));
+    // Real memory engagement score (0-100) based on memories present and reactions
+    const memoryScore = memories.length > 0 
+      ? Math.min(100, Math.round((totalReactions / Math.max(1, memories.length)) * 50 + (memories.length * 10))) 
+      : 0;
 
     const recentGames = gameSessions.slice(0, 5);
-    const avgGameScore = recentGames.length > 0
-      ? Math.round(recentGames.reduce((acc, s) => acc + (s.score || 80), 0) / recentGames.length)
-      : 85;
+    const hasGames = recentGames.length > 0;
+    const avgGameScore = hasGames
+      ? Math.round(recentGames.reduce((acc, s) => acc + (Number(s.score) || 0), 0) / recentGames.length)
+      : 0;
 
-    const overall = Math.round(routineScore * 0.3 + memoryScore * 0.35 + avgGameScore * 0.35);
+    // Real dynamic PCPS calculation
+    let overall = 0;
+    if (hasGames && totalRoutines > 0) {
+      overall = Math.round(routineScore * 0.35 + memoryScore * 0.30 + avgGameScore * 0.35);
+    } else if (hasGames) {
+      overall = Math.round(avgGameScore * 0.70 + memoryScore * 0.30);
+    } else if (totalRoutines > 0) {
+      overall = Math.round(routineScore * 0.70 + memoryScore * 0.30);
+    } else if (memories.length > 0) {
+      overall = Math.round(memoryScore);
+    }
+
+    const clampedOverall = Math.max(0, Math.min(100, overall));
+
     return {
-      overall: Math.max(50, Math.min(98, overall)),
-      routineScore,
-      memoryScore,
-      gameScore: avgGameScore,
-      streakDays: 5,
+      overall: clampedOverall,
+      routineScore: Math.max(0, Math.min(100, routineScore)),
+      memoryScore: Math.max(0, Math.min(100, memoryScore)),
+      gameScore: Math.max(0, Math.min(100, avgGameScore)),
+      streakDays: Math.min(30, (hasGames ? 1 : 0) + (completedRoutines > 0 ? 1 : 0) + (totalReactions > 0 ? 1 : 0)),
       completedRoutinesCount: completedRoutines,
-      totalRoutinesCount: totalRoutines
+      totalRoutinesCount: totalRoutines,
+      hasRealActivity: hasGames || completedRoutines > 0 || totalReactions > 0
     };
   };
 

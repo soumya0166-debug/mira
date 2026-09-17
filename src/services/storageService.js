@@ -46,33 +46,159 @@ function getOtpKey(email) {
   return `mira_otp_${String(email || '').trim().toLowerCase()}`;
 }
 
-// ─── Legacy Demo Cleanup ─────────────────────────────────────────────────────
-function purgeLegacyDemoData() {
+// ─── Default Seeding (Runs only when storage is completely empty) ───────────
+function seedInitialDataIfEmpty() {
   try {
     if (typeof localStorage === 'undefined') return;
 
     const rawUsers = localStorage.getItem('mira_users');
-    if (rawUsers) {
-      const users = JSON.parse(rawUsers);
-      const filtered = users.filter((u) => u.id !== 'user_ananya' && u.id !== 'user_vikram');
-      if (filtered.length !== users.length) {
-        localStorage.setItem('mira_users', JSON.stringify(filtered));
+    let users = [];
+    try {
+      users = rawUsers ? JSON.parse(rawUsers) : [];
+    } catch {
+      users = [];
+    }
+
+    if (users.length === 0) {
+      const radhaUser = {
+        id: 'usr-radha-1',
+        name: 'Radha Barua',
+        email: 'radha@mira.org',
+        role: 'patient',
+        avatar: '👵',
+        lovedOneName: 'Self (Elderly Individual)',
+        isVerified: true,
+        emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+        pin: simpleHash('1234'),
+        password: simpleHash('mira2026'),
+        joinedAt: '2026-01-01T00:00:00.000Z'
+      };
+
+      const ananyaUser = {
+        id: 'usr-ananya-2',
+        name: 'Dr. Ananya Barua',
+        email: 'ananya@mira.org',
+        role: 'guardian',
+        avatar: '👩‍⚕️',
+        lovedOneName: 'Radha Barua (Mother)',
+        isVerified: true,
+        emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+        pin: simpleHash('1234'),
+        password: simpleHash('mira2026'),
+        joinedAt: '2026-01-01T00:00:00.000Z'
+      };
+
+      users = [radhaUser, ananyaUser];
+      localStorage.setItem('mira_users', JSON.stringify(users));
+
+      // ── Radha Patient Data ──
+      const radhaPatient = {
+        id: 'pat-usr-radha-1',
+        name: 'Radha Barua',
+        preferredName: 'Aita Radha',
+        birthYear: '1950',
+        age: '76',
+        avatar: '👵',
+        hobbies: 'Assam tea gardening, Bihu folk songs, weaving traditional Gamusa',
+        childhoodHometown: 'Tezpur, Assam',
+        emergencyContact: { name: 'Dr. Ananya Barua', phone: '+91 98765 43210', relationship: 'Daughter (Caregiver)' },
+        doctorInfo: { name: 'Dr. B. C. Borah', clinic: 'Dispur Wellness & Geriatric Clinic', phone: '+91 94350 12345' },
+        notes: 'Enjoys morning walks and listening to soothing Bihu flute music.'
+      };
+
+      const radhaGuardian = {
+        id: 'guard-usr-radha-1',
+        name: 'Dr. Ananya Barua',
+        relation: 'Daughter & Primary Caregiver',
+        phone: '+91 98765 43210',
+        email: 'ananya@mira.org',
+        notificationPreference: 'Immediate alert & daily digest',
+        avatar: '👩‍⚕️'
+      };
+
+      const radhaMemories = [
+        {
+          id: 'mem-101',
+          title: 'Family Holiday in Shimla',
+          year: '1984',
+          category: 'Travel & Family',
+          relationshipLabel: 'Family & Children',
+          story: 'Our cherished summer holiday in the rolling hills of Shimla. The cool breeze and mountain toy train brought endless laughter.',
+          questionPrompt: 'Do you remember the warm roasted corn we shared near the ridge?',
+          image: SEED_IMAGES.shimla,
+          hasAudio: false,
+          audioNote: null,
+          tags: ['Travel & Family', 'Shimla'],
+          reactions: [{ emoji: '😊', label: 'Brought a smile', date: 'Yesterday' }]
+        },
+        {
+          id: 'mem-102',
+          title: 'Fresh Jasmine Harvest at Dawn',
+          year: '1992',
+          category: 'Home & Nature',
+          relationshipLabel: 'Home Courtyard',
+          story: 'Gathering white jasmine flowers in our courtyard every morning before temple prayer in Tezpur.',
+          questionPrompt: 'Can you still smell the fragrant morning jasmine?',
+          image: SEED_IMAGES.garden,
+          hasAudio: false,
+          audioNote: null,
+          tags: ['Home & Nature', 'Flowers'],
+          reactions: [{ emoji: '🌸', label: 'Peaceful memory', date: '2 days ago' }]
+        },
+        {
+          id: 'mem-103',
+          title: "Ananya's Medical College Graduation",
+          year: '2010',
+          category: 'Milestones',
+          relationshipLabel: 'Daughter (Ananya)',
+          story: 'Proudest day for our family when Ananya received her medical degree at Gauhati Medical College.',
+          questionPrompt: 'Remember how proud we all felt seeing her in her black gown?',
+          image: SEED_IMAGES.graduation,
+          hasAudio: false,
+          audioNote: null,
+          tags: ['Milestones', 'Daughter'],
+          reactions: [{ emoji: '❤️', label: 'Felt comforted', date: '3 days ago' }]
+        }
+      ];
+
+      const radhaRoutines = [
+        { id: 'rout-1', title: 'Morning Assam Tea & Warm Water', time: '08:00 AM', category: 'Nutrition', completedToday: true, completedAt: '08:15 AM' },
+        { id: 'rout-2', title: 'Gentle Garden Walk & Breathing', time: '09:00 AM', category: 'Physical', completedToday: true, completedAt: '09:25 AM' },
+        { id: 'rout-3', title: 'Daily Cognitive Game Stimulation', time: '11:00 AM', category: 'Cognitive', completedToday: false, completedAt: null },
+        { id: 'rout-4', title: 'Blood Pressure Check & Afternoon Rest', time: '02:00 PM', category: 'Health', completedToday: false, completedAt: null },
+        { id: 'rout-5', title: 'Evening Classical Raga Listening', time: '06:00 PM', category: 'Mindfulness', completedToday: false, completedAt: null }
+      ];
+
+      localStorage.setItem(k('usr-radha-1', 'patient'), JSON.stringify(radhaPatient));
+      localStorage.setItem(k('usr-radha-1', 'guardian'), JSON.stringify(radhaGuardian));
+      localStorage.setItem(k('usr-radha-1', 'memories'), JSON.stringify(radhaMemories));
+      localStorage.setItem(k('usr-radha-1', 'routines'), JSON.stringify(radhaRoutines));
+      localStorage.setItem(k('usr-radha-1', 'game_sessions'), JSON.stringify([]));
+      localStorage.setItem(k('usr-radha-1', 'care_notes'), JSON.stringify([
+        { id: 'cn-1', author: 'Dr. Ananya Barua (Daughter)', mood: 'Cheerful & Bright 😊', content: 'Mother was alert and enjoyed reminiscing about Shimla over breakfast.' }
+      ]));
+      localStorage.setItem(k('usr-radha-1', 'cdr_assessments'), JSON.stringify([]));
+      localStorage.setItem(k('usr-radha-1', 'settings'), JSON.stringify({ language: 'en', fontSize: 'normal', mode: 'patient' }));
+
+      // ── Ananya Caregiver Data (Linked to Mother Radha) ──
+      localStorage.setItem(k('usr-ananya-2', 'patient'), JSON.stringify(radhaPatient));
+      localStorage.setItem(k('usr-ananya-2', 'guardian'), JSON.stringify(radhaGuardian));
+      localStorage.setItem(k('usr-ananya-2', 'memories'), JSON.stringify(radhaMemories));
+      localStorage.setItem(k('usr-ananya-2', 'routines'), JSON.stringify(radhaRoutines));
+      localStorage.setItem(k('usr-ananya-2', 'game_sessions'), JSON.stringify([]));
+      localStorage.setItem(k('usr-ananya-2', 'care_notes'), JSON.stringify([
+        { id: 'cn-2', author: 'Dr. Ananya Barua (Daughter)', mood: 'Calm & Steady 🌿', content: 'Scheduled next routine health review for next month.' }
+      ]));
+      localStorage.setItem(k('usr-ananya-2', 'cdr_assessments'), JSON.stringify([]));
+      localStorage.setItem(k('usr-ananya-2', 'settings'), JSON.stringify({ language: 'en', fontSize: 'normal', mode: 'guardian' }));
+
+      // Default active user is Radha Barua if not logged in
+      if (!localStorage.getItem('mira_active_user_id')) {
+        localStorage.setItem('mira_active_user_id', 'usr-radha-1');
       }
     }
-
-    // Clean keys for demo users
-    const demoIds = ['user_ananya', 'user_vikram', 'usr-radha-1', 'usr-ananya-2'];
-    demoIds.forEach((uid) => {
-      const suffixes = ['patient', 'guardian', 'memories', 'routines', 'game_sessions', 'care_notes', 'cdr_assessments', 'settings'];
-      suffixes.forEach((s) => localStorage.removeItem(k(uid, s)));
-    });
-
-    const activeUser = localStorage.getItem('mira_active_user_id');
-    if (demoIds.includes(activeUser)) {
-      localStorage.removeItem('mira_active_user_id');
-    }
   } catch (e) {
-    console.warn('Could not clean legacy demo data:', e);
+    console.warn('Could not seed initial data:', e);
   }
 }
 
@@ -88,7 +214,7 @@ function k(userId, suffix) {
 export const storageService = {
   // ── Bootstrapping ──
   init() {
-    purgeLegacyDemoData();
+    seedInitialDataIfEmpty();
     indexedDBStorage.init().catch(() => {});
   },
 
@@ -290,6 +416,7 @@ export const storageService = {
 
   logout() {
     localStorage.removeItem('mira_active_user_id');
+    localStorage.removeItem('mira_active_tab');
   },
 
   updateUser(userId, updates) {
@@ -513,7 +640,7 @@ export const storageService = {
 
 try {
   if (typeof window !== 'undefined' && window.localStorage) {
-    purgeLegacyDemoData();
+    seedInitialDataIfEmpty();
   }
 } catch (e) {}
 

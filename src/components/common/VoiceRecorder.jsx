@@ -60,10 +60,15 @@ export default function VoiceRecorder({ onRecordingComplete, initialAudio = null
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
-      audioService.playSoftClick();
     } catch (err) {
-      console.warn('Microphone error, providing simulated friendly voice note:', err);
-      setErrorMsg('Microphone unavailable or permission not granted. You can use our simulated voice note instead.');
+      console.warn('Microphone error:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setErrorMsg('Microphone permission denied. Please allow microphone access in your browser settings to record audio.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setErrorMsg('No microphone detected on this device.');
+      } else {
+        setErrorMsg(err.message || 'Microphone access failed. Please check device permissions.');
+      }
     }
   };
 

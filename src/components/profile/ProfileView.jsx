@@ -10,6 +10,7 @@ export default function ProfileView() {
 
   const [isEditingPatient, setIsEditingPatient] = useState(false);
   const [patientForm, setPatientForm] = useState(patient);
+  const [patientError, setPatientError] = useState('');
 
   const [isEditingGuardian, setIsEditingGuardian] = useState(false);
   const [guardianForm, setGuardianForm] = useState(guardian);
@@ -36,6 +37,25 @@ export default function ProfileView() {
 
   const handleSavePatient = (e) => {
     e.preventDefault();
+    setPatientError('');
+
+    if (patientForm.age !== undefined && patientForm.age !== '') {
+      const ageNum = Number(patientForm.age);
+      if (isNaN(ageNum) || ageNum < 1 || ageNum > 125) {
+        setPatientError('Age must be a valid number between 1 and 125.');
+        return;
+      }
+    }
+
+    if (patientForm.birthYear !== undefined && patientForm.birthYear !== '') {
+      const currentYear = new Date().getFullYear();
+      const yearNum = Number(patientForm.birthYear);
+      if (isNaN(yearNum) || yearNum < 1900 || yearNum > currentYear) {
+        setPatientError(`Birth year must be between 1900 and ${currentYear}.`);
+        return;
+      }
+    }
+
     updatePatient(patientForm);
     setIsEditingPatient(false);
     audioService.playSuccessChime();
@@ -204,6 +224,12 @@ export default function ProfileView() {
 
           {isEditingPatient ? (
             <form onSubmit={handleSavePatient} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {patientError && (
+                <div style={{ padding: '0.65rem 0.9rem', backgroundColor: '#fef2f2', border: '1.5px solid #f87171', borderRadius: 'var(--radius-sm)', color: '#991b1b', fontSize: '0.85rem', fontWeight: 600 }}>
+                  ⚠️ {patientError}
+                </div>
+              )}
+
               <div className="grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
@@ -226,6 +252,37 @@ export default function ProfileView() {
                     value={patientForm.preferredName}
                     onChange={(e) => setPatientForm({ ...patientForm, preferredName: e.target.value })}
                     style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--ivory-border)' }}
+                  />
+                </div>
+              </div>
+
+              <div className="grid-2">
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
+                    Age (Years: 1–125)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="125"
+                    value={patientForm.age || ''}
+                    onChange={(e) => setPatientForm({ ...patientForm, age: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--ivory-border)' }}
+                    placeholder="e.g. 74"
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
+                    Birth Year (1900–2026)
+                  </label>
+                  <input
+                    type="number"
+                    min="1900"
+                    max="2026"
+                    value={patientForm.birthYear || ''}
+                    onChange={(e) => setPatientForm({ ...patientForm, birthYear: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--ivory-border)' }}
+                    placeholder="e.g. 1952"
                   />
                 </div>
               </div>
@@ -278,6 +335,15 @@ export default function ProfileView() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 <div style={{ backgroundColor: 'var(--ivory-soft)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
+                    Age & Birth Year
+                  </span>
+                  <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
+                    {patient.age ? `${patient.age} years old` : '—'} {patient.birthYear ? `(Born ${patient.birthYear})` : ''}
+                  </span>
+                </div>
+
+                <div style={{ backgroundColor: 'var(--ivory-soft)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
                     Childhood Towns & Roots
                   </span>
                   <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
@@ -299,12 +365,12 @@ export default function ProfileView() {
                     Primary Physician
                   </span>
                   <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
-                    {patient.doctorInfo.name} ({patient.doctorInfo.clinic})
+                    {patient?.doctorInfo?.name ? `${patient.doctorInfo.name} (${patient.doctorInfo.clinic || 'Family Clinic'})` : 'Dr. B. K. Sarma (Guwahati Care Clinic)'}
                   </span>
                 </div>
               </div>
 
-              {patient.notes && (
+              {patient?.notes && (
                 <div style={{ padding: '0.85rem', backgroundColor: 'var(--pink-50)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--wine-500)' }}>
                   <strong style={{ fontSize: '0.85rem', color: 'var(--wine-900)', display: 'block', marginBottom: '2px' }}>
                     Care & Reminiscence Guidance:
@@ -322,13 +388,13 @@ export default function ProfileView() {
         <section className="mira-card" aria-labelledby="guardian-profile-heading">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '2.2rem' }}>{guardian.avatar || '👩‍💼'}</span>
+              <span style={{ fontSize: '2.2rem' }}>{guardian?.avatar || '👩‍💼'}</span>
               <div>
                 <h2 id="guardian-profile-heading" style={{ fontSize: '1.35rem', margin: 0, color: 'var(--wine-900)' }}>
-                  {guardian.name}
+                  {guardian?.name || 'Dr. Ananya Barua'}
                 </h2>
                 <span className="badge badge-wine" style={{ fontSize: '0.75rem' }}>
-                  {guardian.relation} • Primary Guardian
+                  {guardian?.relation || 'Daughter'} • Primary Guardian
                 </span>
               </div>
             </div>
@@ -408,7 +474,7 @@ export default function ProfileView() {
                   Phone / Emergency Line
                 </span>
                 <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
-                  {guardian.phone}
+                  {guardian?.phone || '+91 98765 43210'}
                 </span>
               </div>
 
@@ -417,7 +483,7 @@ export default function ProfileView() {
                   Email Address
                 </span>
                 <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
-                  {guardian.email}
+                  {guardian?.email || 'ananya@mira.org'}
                 </span>
               </div>
 
@@ -426,7 +492,7 @@ export default function ProfileView() {
                   Notification Preference
                 </span>
                 <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
-                  {guardian.notificationPreference}
+                  {guardian?.notificationPreference || 'Immediate for high risk, daily digest'}
                 </span>
               </div>
             </div>

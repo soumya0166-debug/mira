@@ -19,7 +19,11 @@ class AdaptiveEngine {
     difficulty,
     score,
     accuracy,
+    responseTimeMs = 0,
+    responseTime = 0,
+    errors = 0,
     durationSeconds,
+    sessionDuration,
     moves = 0
   }) {
     // 1. Record session through offline-first game service (IndexedDB + Sync Queue)
@@ -30,7 +34,10 @@ class AdaptiveEngine {
       difficulty,
       score,
       accuracy,
-      durationSeconds,
+      responseTimeMs: responseTimeMs || responseTime,
+      errors,
+      durationSeconds: durationSeconds || sessionDuration,
+      sessionDuration: sessionDuration || durationSeconds,
       moves
     });
 

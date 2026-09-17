@@ -18,6 +18,7 @@ export default function SequenceRecallGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [errors, setErrors] = useState(0);
 
   // Dynamic drums according to selected language
   const drums = getGameContent('sequence-recall', language) || [];
@@ -34,13 +35,13 @@ export default function SequenceRecallGame({ onNextActivity }) {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
       osc.start();
-      osc.stop(audioCtx.currentTime + 0.5);
+      osc.stop(audioCtx.currentTime + 0.65);
     } catch {}
   };
 
@@ -57,6 +58,7 @@ export default function SequenceRecallGame({ onNextActivity }) {
     setDifficulty(diff);
     setIsCompleted(false);
     setPlayerStep(0);
+    setErrors(0);
     setAdaptiveInfo(null);
     setStartTime(Date.now());
 
@@ -104,12 +106,14 @@ export default function SequenceRecallGame({ onNextActivity }) {
 
       if (nextStep === sequence.length) {
         // Successful completion
-        finishGame();
+        finishGame(errors);
       } else {
         setStatusMessage(`Good! Step ${nextStep} of ${sequence.length}. Keep going.`);
       }
     } else {
       // Gentle mismatch without buzzer or jarring sounds
+      const nextErrors = errors + 1;
+      setErrors(nextErrors);
       setStatusMessage('Gently take a breath. Let us listen to the rhythm once again.');
       if (voiceEnabled) {
         audioService.speakText('Let us listen to the rhythm once again.', language);
@@ -121,7 +125,7 @@ export default function SequenceRecallGame({ onNextActivity }) {
     }
   };
 
-  const finishGame = async () => {
+  const finishGame = async (finalErrors = errors) => {
     setIsCompleted(true);
     setStatusMessage('Splendid rhythm! You remembered the entire sequence with great focus.');
 
@@ -134,9 +138,11 @@ export default function SequenceRecallGame({ onNextActivity }) {
       audioService.speakText('Splendid rhythm! You remembered the sequence with calm focus.', language);
     }
 
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const score = 100;
-    const accuracy = 100;
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, sequence.length));
+    const accuracy = Math.max(0, Math.min(100, Math.round((sequence.length / Math.max(sequence.length, sequence.length + finalErrors)) * 100)));
+    const score = Math.max(0, Math.min(100, 100 - (finalErrors * 10)));
 
     const result = await adaptiveEngine.recordGameSession({
       userId: activeUserId || 'usr-radha-1',
@@ -145,7 +151,11 @@ export default function SequenceRecallGame({ onNextActivity }) {
       difficulty,
       score,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: finalErrors,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: sequence.length
     });
 

@@ -92,9 +92,12 @@ export default function ObjectRecallGame({ onNextActivity }) {
   const evaluateRecall = async (selected) => {
     setStage('completed');
     const correctCount = selected.filter(s => targetItems.some(t => t.id === s.id)).length;
-    const accuracy = Math.round((correctCount / targetItems.length) * 100);
-    const score = Math.max(40, accuracy);
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
+    const errorCount = selected.length - correctCount;
+    const accuracy = Math.max(0, Math.min(100, Math.round((correctCount / targetItems.length) * 100)));
+    const score = accuracy;
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, selected.length));
 
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
@@ -112,7 +115,11 @@ export default function ObjectRecallGame({ onNextActivity }) {
       difficulty,
       score,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: errorCount,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: selected.length
     });
 

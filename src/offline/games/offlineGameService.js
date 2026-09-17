@@ -20,13 +20,22 @@ class OfflineGameService {
     gameId,
     gameType,
     difficulty = 'easy',
-    score = 85,
+    score = 80,
     accuracy = 80,
+    responseTimeMs = 0,
+    responseTime = 0,
+    errors = 0,
     durationSeconds = 60,
+    sessionDuration = 60,
     moves = 0,
     attempts = 1
   }) {
     const activeUserId = userId || patientId || localStorage.getItem('mira_active_user_id') || 'usr-radha-1';
+    const computedResponseTime = Math.max(0, Math.round(responseTimeMs || responseTime || 0));
+    const computedDuration = Math.max(1, Math.round(durationSeconds || sessionDuration || 1));
+    const computedAccuracy = Math.max(0, Math.min(100, Math.round(accuracy)));
+    const computedErrors = Math.max(0, Math.round(errors || 0));
+    const computedScore = Math.max(0, Math.min(100, Math.round(score)));
 
     const session = {
       id: 'sess-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
@@ -36,9 +45,13 @@ class OfflineGameService {
       gameId: gameId || gameType,
       gameType: gameType || 'memory-match',
       difficulty,
-      score: Math.round(score),
-      accuracy: Math.round(accuracy),
-      durationSeconds,
+      score: computedScore,
+      accuracy: computedAccuracy,
+      responseTimeMs: computedResponseTime,
+      responseTime: computedResponseTime,
+      errors: computedErrors,
+      durationSeconds: computedDuration,
+      sessionDuration: computedDuration,
       moves,
       attempts,
       completedAt: new Date().toISOString(),
@@ -53,6 +66,8 @@ class OfflineGameService {
       gameType: session.gameType,
       score: session.score,
       accuracy: session.accuracy,
+      responseTimeMs: session.responseTimeMs,
+      errors: session.errors,
       durationSeconds: session.durationSeconds,
       timestamp: session.completedAt
     });

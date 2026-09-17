@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, VolumeX, Send, Sparkles, Brain, Clock, Heart, ArrowRight } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, Send, Sparkles, Brain, Clock, Heart, ArrowRight, AlertCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { aiService } from '../../services/aiService';
 import { audioService } from '../../services/audioService';
@@ -117,8 +117,22 @@ export default function MiraAssistant({ onNavigateTab }) {
       },
       onError: (err) => {
         setVoiceState('error');
-        setErrorMessage('Could not hear clearly. Please tap microphone and speak again.');
-        setTimeout(() => setVoiceState('idle'), 3000);
+        if (err === 'not-allowed' || err === 'service-not-allowed' || err === 'audio-capture') {
+          // Requirement 13: Speech-to-text should fail immediately if microphone permission is denied
+          setErrorMessage('Microphone access denied. Please allow microphone permission in your browser address bar to speak with MIRA.');
+        } else if (err === 'no-speech') {
+          setErrorMessage('No speech detected. Please tap the microphone and speak again.');
+          setTimeout(() => {
+            setVoiceState(prev => prev === 'error' ? 'idle' : prev);
+            setErrorMessage('');
+          }, 3500);
+        } else {
+          setErrorMessage('Could not understand speech audio. Please tap the microphone and try again.');
+          setTimeout(() => {
+            setVoiceState(prev => prev === 'error' ? 'idle' : prev);
+            setErrorMessage('');
+          }, 3500);
+        }
       },
       onEnd: () => {
         if (voiceState === 'listening') {
@@ -363,6 +377,47 @@ export default function MiraAssistant({ onNavigateTab }) {
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Prominent Voice / Mic Permission Error Alert */}
+      {errorMessage && (
+        <div
+          role="alert"
+          style={{
+            padding: '0.75rem 1rem',
+            backgroundColor: '#fef2f2',
+            borderRadius: '14px',
+            border: '1.5px solid #f87171',
+            marginBottom: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            color: '#991b1b',
+            fontSize: '0.9rem',
+            fontWeight: 500
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <AlertCircle size={20} style={{ color: '#dc2626', flexShrink: 0 }} />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage('')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#991b1b',
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontSize: '1rem',
+              padding: '0.2rem 0.5rem'
+            }}
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Bottom Voice & Text Input Bar */}
       <div

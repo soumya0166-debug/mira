@@ -17,6 +17,7 @@ export default function PatternRecognitionGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [errors, setErrors] = useState(0);
 
   const patterns = getGameContent('pattern-recognition', language) || [];
 
@@ -26,6 +27,7 @@ export default function PatternRecognitionGame({ onNextActivity }) {
     setSelectedOption(null);
     setIsCorrect(null);
     setScore(0);
+    setErrors(0);
     setIsCompleted(false);
     setAdaptiveInfo(null);
     setStartTime(Date.now());
@@ -55,6 +57,7 @@ export default function PatternRecognitionGame({ onNextActivity }) {
     const correct = option === currentPattern.correct;
     setIsCorrect(correct);
 
+    let nextErrors = errors;
     if (correct) {
       setScore(s => s + 25);
       audioService.playSuccessChime();
@@ -62,6 +65,8 @@ export default function PatternRecognitionGame({ onNextActivity }) {
         audioService.speakText('Correct pattern match! Wonderful.', language);
       }
     } else {
+      nextErrors = errors + 1;
+      setErrors(nextErrors);
       audioService.playSoftClick();
       if (voiceEnabled) {
         audioService.speakText('Good try. Let us see the next pattern.', language);
@@ -74,15 +79,17 @@ export default function PatternRecognitionGame({ onNextActivity }) {
         setSelectedOption(null);
         setIsCorrect(null);
       } else {
-        finishGame(correct ? score + 25 : score);
+        finishGame(correct ? score + 25 : score, nextErrors);
       }
     }, 1400);
   };
 
-  const finishGame = async (finalScore) => {
+  const finishGame = async (finalScore, finalErrors = errors) => {
     setIsCompleted(true);
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const accuracy = Math.round((finalScore / 100) * 100);
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, patterns.length));
+    const accuracy = Math.max(0, Math.min(100, Math.round(((patterns.length - finalErrors) / Math.max(1, patterns.length)) * 100)));
 
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
@@ -99,7 +106,11 @@ export default function PatternRecognitionGame({ onNextActivity }) {
       difficulty,
       score: finalScore,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: finalErrors,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: patterns.length
     });
 

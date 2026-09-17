@@ -62,7 +62,7 @@ export default function GuardianDashboard() {
   const [importStatus, setImportStatus] = useState(null);
 
   const completedRoutines = routines.filter((r) => r.completedToday);
-  const adherenceRate = Math.round((completedRoutines.length / routines.length) * 100);
+  const adherenceRate = routines.length > 0 ? Math.round((completedRoutines.length / routines.length) * 100) : 0;
 
   // Extract recent reactions across all memories
   const allReactions = memories.flatMap((m) => 
@@ -74,7 +74,7 @@ export default function GuardianDashboard() {
     if (!newNoteContent.trim()) return;
 
     addCareNote({
-      author: `${guardian.name} (${guardian.relation})`,
+      author: `${guardian.name || 'Caregiver'} (${guardian.relation || 'Family'})`,
       mood: newNoteMood,
       content: newNoteContent
     });
@@ -124,7 +124,7 @@ export default function GuardianDashboard() {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
           <Shield size={26} style={{ color: 'var(--wine-700)' }} />
           <h1 style={{ margin: 0 }}>{t.guardian.title}</h1>
@@ -132,6 +132,28 @@ export default function GuardianDashboard() {
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: 0 }}>
           {t.guardian.subtitle}
         </p>
+      </div>
+
+      {/* Mandatory Non-Medical Disclaimer Notice */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          backgroundColor: '#fffbeb',
+          border: '1px solid #fde68a',
+          borderRadius: '0.85rem',
+          padding: '0.85rem 1.15rem',
+          marginBottom: '1.5rem',
+          fontSize: '0.88rem',
+          color: '#92400e',
+          lineHeight: 1.45
+        }}
+      >
+        <AlertCircle size={20} style={{ color: '#d97706', flexShrink: 0 }} />
+        <div>
+          <strong style={{ color: '#78350f' }}>Important Notice: MIRA/PCPS is not a medical diagnosis.</strong> This platform provides assistive wellness tools and cognitive engagement routines. It does not diagnose dementia or substitute for medical professional consultation.
+        </div>
       </div>
 
       {/* Emergency Quick Action & Patient Overview Card */}
@@ -161,14 +183,14 @@ export default function GuardianDashboard() {
               fontSize: '2rem'
             }}
           >
-            {patient.avatar || '👵'}
+            {patient?.avatar || '👵'}
           </div>
           <div>
             <h3 style={{ margin: '0 0 0.2rem', color: 'var(--wine-900)', fontSize: '1.25rem' }}>
-              {patient.name} ({patient.preferredName})
+              {patient?.name || 'Radha Barua'} {patient?.preferredName ? `(${patient.preferredName})` : ''}
             </h3>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Age {patient.age} • Hometown: {patient.childhoodHometown} • Doctor: {patient.doctorInfo.name}
+              {patient?.age ? `Age ${patient.age} • ` : ''}{patient?.childhoodHometown ? `Hometown: ${patient.childhoodHometown} • ` : ''}Doctor: {patient?.doctorInfo?.name || 'Assigned Family Physician'}
             </p>
           </div>
         </div>
@@ -176,7 +198,7 @@ export default function GuardianDashboard() {
         {/* ICE Call Button */}
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <a
-            href={`tel:${patient.emergencyContact?.phone || ''}`}
+            href={`tel:${patient?.emergencyContact?.phone || ''}`}
             className="btn-primary"
             style={{ textDecoration: 'none' }}
           >
@@ -309,7 +331,7 @@ export default function GuardianDashboard() {
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Last Sync</span>
             <div style={{ marginTop: '0.25rem' }}>
               <strong style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>
-                {lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Today, 10:24 AM'}
+                {lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Ready to Sync'}
               </strong>
             </div>
           </div>
@@ -413,26 +435,32 @@ export default function GuardianDashboard() {
             <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.2rem', color: 'var(--wine-900)' }}>
               CDR-Inspired Cognitive Functional Screening
             </h3>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sum of Boxes: </span>
-                <strong style={{ fontSize: '1.15rem', color: 'var(--wine-900)' }}>
-                  {(latestCDRAssessment?.total_score ?? 4.0).toFixed(1)} / 18
-                </strong>
+            {latestCDRAssessment ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sum of Boxes: </span>
+                  <strong style={{ fontSize: '1.15rem', color: 'var(--wine-900)' }}>
+                    {latestCDRAssessment.total_score.toFixed(1)} / 18
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Observed Level: </span>
+                  <strong style={{ fontSize: '0.95rem', color: '#0284c7' }}>
+                    {latestCDRAssessment.observed_level}
+                  </strong>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Trend: </span>
+                  <strong style={{ fontSize: '0.95rem', color: cdrTrend?.color ?? '#2563eb' }}>
+                    {cdrTrend?.status ?? 'Stable'}
+                  </strong>
+                </div>
               </div>
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Observed Level: </span>
-                <strong style={{ fontSize: '0.95rem', color: '#0284c7' }}>
-                  {latestCDRAssessment?.observed_level ?? 'Very mild'}
-                </strong>
+            ) : (
+              <div style={{ marginTop: '0.5rem', fontSize: '0.88rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                No clinical functional screening recorded yet. Tap "Conduct Screening" to log the initial baseline.
               </div>
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Trend: </span>
-                <strong style={{ fontSize: '0.95rem', color: cdrTrend?.color ?? '#2563eb' }}>
-                  {cdrTrend?.status ?? 'Stable'}
-                </strong>
-              </div>
-            </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: '0.65rem' }}>

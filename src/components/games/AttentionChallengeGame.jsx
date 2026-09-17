@@ -73,10 +73,13 @@ export default function AttentionChallengeGame({ onNextActivity }) {
     }
   };
 
+  const [errors, setErrors] = useState(0);
+
   const startNewGame = (diff = difficulty) => {
     setDifficulty(diff);
     setRoundsPlayed(0);
     setScore(0);
+    setErrors(0);
     setIsCompleted(false);
     setAdaptiveInfo(null);
     setStartTime(Date.now());
@@ -100,21 +103,25 @@ export default function AttentionChallengeGame({ onNextActivity }) {
       setRoundsPlayed(nextRounds);
 
       if (nextRounds >= ROUNDS_PER_GAME) {
-        finishGame(nextScore);
+        finishGame(nextScore, errors);
       } else {
         setTimeout(() => {
           startNewRound(difficulty, nextRounds);
         }, 1000);
       }
     } else {
+      setErrors(e => e + 1);
       audioService.playSoftClick();
     }
   };
 
-  const finishGame = async (finalScore) => {
+  const finishGame = async (finalScore, finalErrors = errors) => {
     setIsCompleted(true);
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const accuracy = 100;
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, ROUNDS_PER_GAME));
+    const accuracy = Math.max(0, Math.min(100, Math.round((ROUNDS_PER_GAME / Math.max(ROUNDS_PER_GAME, ROUNDS_PER_GAME + finalErrors)) * 100)));
+    const score = Math.max(0, Math.min(100, 100 - (finalErrors * 10)));
 
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
@@ -129,9 +136,13 @@ export default function AttentionChallengeGame({ onNextActivity }) {
       gameId: 'attention-challenge',
       gameType: 'attention-challenge',
       difficulty,
-      score: 100,
+      score,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: finalErrors,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: ROUNDS_PER_GAME
     });
 

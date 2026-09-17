@@ -16,6 +16,7 @@ export default function PictureRecognitionGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [errors, setErrors] = useState(0);
 
   // Dynamic landmarks according to selected regional language
   const landmarks = getGameContent('picture-recognition', language) || [];
@@ -31,6 +32,7 @@ export default function PictureRecognitionGame({ onNextActivity }) {
     setCurrentIdx(0);
     setSelectedOption(null);
     setScore(0);
+    setErrors(0);
     setIsCompleted(false);
     setAdaptiveInfo(null);
     setStartTime(Date.now());
@@ -59,6 +61,7 @@ export default function PictureRecognitionGame({ onNextActivity }) {
     setSelectedOption(option);
 
     const isCorrect = option === currentLandmark.name;
+    let nextErrors = errors;
     if (isCorrect) {
       setScore(s => s + Math.round(100 / totalQuestions));
       audioService.playSuccessChime();
@@ -66,6 +69,8 @@ export default function PictureRecognitionGame({ onNextActivity }) {
         audioService.speakText(`Correct! It is ${currentLandmark.name}.`, language);
       }
     } else {
+      nextErrors = errors + 1;
+      setErrors(nextErrors);
       audioService.playSoftClick();
       if (voiceEnabled) {
         audioService.speakText(`Good try! That was ${currentLandmark.name}.`, language);
@@ -77,15 +82,17 @@ export default function PictureRecognitionGame({ onNextActivity }) {
         setCurrentIdx(idx => idx + 1);
         setSelectedOption(null);
       } else {
-        finishGame(isCorrect ? score + Math.round(100 / totalQuestions) : score);
+        finishGame(isCorrect ? score + Math.round(100 / totalQuestions) : score, nextErrors);
       }
     }, 1400);
   };
 
-  const finishGame = async (finalScore) => {
+  const finishGame = async (finalScore, finalErrors = errors) => {
     setIsCompleted(true);
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const accuracy = Math.min(100, finalScore);
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, totalQuestions));
+    const accuracy = Math.max(0, Math.min(100, Math.round(((totalQuestions - finalErrors) / Math.max(1, totalQuestions)) * 100)));
 
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
@@ -102,7 +109,11 @@ export default function PictureRecognitionGame({ onNextActivity }) {
       difficulty,
       score: accuracy,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: finalErrors,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: totalQuestions
     });
 

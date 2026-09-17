@@ -16,6 +16,7 @@ export default function SimpleLanguageRecallGame({ onNextActivity }) {
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
   const [startTime, setStartTime] = useState(null);
+  const [errors, setErrors] = useState(0);
 
   // Dynamic language pairs based on active user language
   const languagePairs = getGameContent('language-recall', language) || [];
@@ -31,6 +32,7 @@ export default function SimpleLanguageRecallGame({ onNextActivity }) {
     setCurrentIdx(0);
     setSelectedOption(null);
     setScore(0);
+    setErrors(0);
     setIsCompleted(false);
     setAdaptiveInfo(null);
     setStartTime(Date.now());
@@ -43,10 +45,10 @@ export default function SimpleLanguageRecallGame({ onNextActivity }) {
   const totalPairs = getPairCount(difficulty);
   const currentPair = languagePairs[currentIdx] || languagePairs[0];
 
-  // Auto-announce word and prompt when pair changes
+  // Auto-announce phrase when it changes if voice is enabled
   useEffect(() => {
     if (currentPair && voiceEnabled && !isCompleted) {
-      const phraseText = `In ${currentPair.language}, the expression is ${currentPair.nativeWord}. What does this mean?`;
+      const phraseText = `${currentPair.phrase}. What does this mean?`;
       const timer = setTimeout(() => {
         audioService.speakText(phraseText, language);
       }, 350);
@@ -59,6 +61,7 @@ export default function SimpleLanguageRecallGame({ onNextActivity }) {
     setSelectedOption(option);
 
     const isCorrect = option === currentPair.correct;
+    let nextErrors = errors;
     if (isCorrect) {
       setScore(s => s + Math.round(100 / totalPairs));
       audioService.playSuccessChime();
@@ -66,6 +69,8 @@ export default function SimpleLanguageRecallGame({ onNextActivity }) {
         audioService.speakText(`Correct! It means ${currentPair.correct}.`, language);
       }
     } else {
+      nextErrors = errors + 1;
+      setErrors(nextErrors);
       audioService.playSoftClick();
       if (voiceEnabled) {
         audioService.speakText(`Good try! It means ${currentPair.correct}.`, language);
@@ -77,15 +82,17 @@ export default function SimpleLanguageRecallGame({ onNextActivity }) {
         setCurrentIdx(idx => idx + 1);
         setSelectedOption(null);
       } else {
-        finishGame(isCorrect ? score + Math.round(100 / totalPairs) : score);
+        finishGame(isCorrect ? score + Math.round(100 / totalPairs) : score, nextErrors);
       }
     }, 1400);
   };
 
-  const finishGame = async (finalScore) => {
+  const finishGame = async (finalScore, finalErrors = errors) => {
     setIsCompleted(true);
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const accuracy = Math.min(100, finalScore);
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, totalPairs));
+    const accuracy = Math.max(0, Math.min(100, Math.round(((totalPairs - finalErrors) / Math.max(1, totalPairs)) * 100)));
 
     try {
       confetti({ particleCount: 35, spread: 60, origin: { y: 0.7 } });
@@ -102,7 +109,11 @@ export default function SimpleLanguageRecallGame({ onNextActivity }) {
       difficulty,
       score: accuracy,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: finalErrors,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: totalPairs
     });
 

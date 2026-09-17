@@ -377,29 +377,31 @@ export default function Header() {
             )}
           </div>
 
-          {/* Primary Role Switcher Toggle */}
-          <button 
-            onClick={() => switchMode(isPatient ? 'guardian' : 'patient')}
-            className={isPatient ? 'btn-primary' : 'btn-secondary'}
-            style={{
-              padding: '0.45rem 1rem',
-              fontSize: '0.85rem',
-              minHeight: '40px'
-            }}
-            title={isPatient ? 'Switch to Guardian Oversight' : 'Switch to Patient Friendly View'}
-          >
-            {isPatient ? (
-              <>
-                <Shield size={16} />
-                <span>{t.guardianMode}</span>
-              </>
-            ) : (
-              <>
-                <UserCheck size={16} />
-                <span>{t.patientMode}</span>
-              </>
-            )}
-          </button>
+          {/* Primary Role Switcher Toggle (For Caregiver only) */}
+          {currentUser?.role === 'guardian' && (
+            <button 
+              onClick={() => switchMode(isPatient ? 'guardian' : 'patient')}
+              className={isPatient ? 'btn-primary' : 'btn-secondary'}
+              style={{
+                padding: '0.45rem 1rem',
+                fontSize: '0.85rem',
+                minHeight: '40px'
+              }}
+              title={isPatient ? 'Return to Guardian Dashboard' : 'Preview Patient-Friendly Interface'}
+            >
+              {isPatient ? (
+                <>
+                  <Shield size={16} />
+                  <span>{t.guardianMode || 'Guardian Hub'}</span>
+                </>
+              ) : (
+                <>
+                  <UserCheck size={16} />
+                  <span>Preview Elder View</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* User Avatar & Account Menu */}
           <div style={{ position: 'relative' }}>
@@ -460,7 +462,9 @@ export default function Header() {
                         {currentUser?.email}
                       </div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--wine-600)', fontWeight: 600, marginTop: '1px' }}>
-                        Caring for: {currentUser?.lovedOneName || 'Your Loved One'}
+                        {currentUser?.role === 'patient' 
+                          ? `Caregiver: ${patient?.emergencyContact?.name || 'Dr. Ananya Barua'}`
+                          : `Caring for: ${currentUser?.lovedOneName || patient?.name || 'Radha Barua'}`}
                       </div>
                     </div>
                   </div>

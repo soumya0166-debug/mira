@@ -40,6 +40,7 @@ export default function MemoryMatchGame({ onNextActivity }) {
     setFlipped([]);
     setMatched([]);
     setMoves(0);
+    setErrors(0);
     setStartTime(Date.now());
     setIsCompleted(false);
     setAdaptiveInfo(null);
@@ -64,7 +65,8 @@ export default function MemoryMatchGame({ onNextActivity }) {
     }
 
     if (newFlipped.length === 2) {
-      setMoves(m => m + 1);
+      const nextMoves = moves + 1;
+      setMoves(nextMoves);
       const [firstIdx, secondIdx] = newFlipped;
       const card1 = cards[firstIdx];
       const card2 = cards[secondIdx];
@@ -85,10 +87,12 @@ export default function MemoryMatchGame({ onNextActivity }) {
         // Check game completion
         const totalPairs = cards.length / 2;
         if (newMatched.length === totalPairs) {
-          handleCompletion(totalPairs, moves + 1);
+          handleCompletion(totalPairs, nextMoves, errors);
         }
       } else {
         // Mismatch - flip back gently
+        const nextErrors = errors + 1;
+        setErrors(nextErrors);
         setTimeout(() => {
           setFlipped([]);
         }, 1200);
@@ -96,11 +100,13 @@ export default function MemoryMatchGame({ onNextActivity }) {
     }
   };
 
-  const handleCompletion = async (pairs, finalMoves) => {
+  const handleCompletion = async (pairs, finalMoves, finalErrors = errors) => {
     setIsCompleted(true);
-    const durationSeconds = Math.round((Date.now() - (startTime || Date.now())) / 1000);
-    const accuracy = Math.min(100, Math.round((pairs / finalMoves) * 100));
-    const score = Math.max(30, Math.min(100, 100 - (finalMoves - pairs) * 5));
+    const elapsedMs = Date.now() - (startTime || Date.now());
+    const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+    const responseTimeMs = Math.round(elapsedMs / Math.max(1, finalMoves));
+    const accuracy = Math.max(0, Math.min(100, Math.round((pairs / Math.max(pairs, finalMoves)) * 100)));
+    const score = Math.max(0, Math.min(100, 100 - (finalErrors * 5)));
 
     try {
       confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
@@ -117,7 +123,11 @@ export default function MemoryMatchGame({ onNextActivity }) {
       difficulty,
       score,
       accuracy,
+      responseTimeMs,
+      responseTime: responseTimeMs,
+      errors: finalErrors,
       durationSeconds,
+      sessionDuration: durationSeconds,
       moves: finalMoves
     });
 

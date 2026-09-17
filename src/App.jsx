@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/common/Header';
 import Navigation from './components/common/Navigation';
 import OfflineBanner from './components/common/OfflineBanner';
@@ -32,6 +32,22 @@ export default function App() {
 
   const [landingMode, setLandingMode] = useState(!isLoggedIn);
   const [authTab, setAuthTab] = useState('signin');
+
+  // Guard against browser Back-button reopening authenticated screens after logout
+  useEffect(() => {
+    if (!isLoggedIn) {
+      try {
+        window.history.replaceState(null, '', '/');
+      } catch {}
+      const handlePopState = () => {
+        try {
+          window.history.replaceState(null, '', '/');
+        } catch {}
+      };
+      window.addEventListener('popstate', handlePopState);
+      return () => window.removeEventListener('popstate', handlePopState);
+    }
+  }, [isLoggedIn]);
 
   // If user is not logged in
   if (!isLoggedIn) {

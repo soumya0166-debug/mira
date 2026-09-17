@@ -21,11 +21,13 @@ const SAMPLE_PHOTO_PRESETS = [
 export default function AddMemoryModal({ isOpen, onClose, onSave }) {
   const [title, setTitle] = useState('');
   const [year, setYear] = useState('');
+  const [relationshipLabel, setRelationshipLabel] = useState('Daughter');
   const [category, setCategory] = useState('Travel & Family');
   const [story, setStory] = useState('');
   const [questionPrompt, setQuestionPrompt] = useState('');
   const [image, setImage] = useState(SAMPLE_PHOTO_PRESETS[0].url);
   const [audioNote, setAudioNote] = useState(null);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
@@ -42,18 +44,37 @@ export default function AddMemoryModal({ isOpen, onClose, onSave }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    setError('');
+    if (!title.trim()) {
+      setError('Please provide a title for this memory.');
+      return;
+    }
+
+    // Validate year: no impossible future years or ancient years
+    const currentYear = new Date().getFullYear();
+    const numericYear = parseInt(year.trim(), 10);
+    if (year.trim() && !isNaN(numericYear)) {
+      if (numericYear > currentYear) {
+        setError(`Year cannot be in the future (maximum ${currentYear}).`);
+        return;
+      }
+      if (numericYear < 1900) {
+        setError('Year must be 1900 or later.');
+        return;
+      }
+    }
 
     onSave({
-      title,
-      year: year || 'Cherished Memory',
+      title: title.trim(),
+      year: year.trim() || 'Cherished Era',
+      relationshipLabel: relationshipLabel.trim() || 'Family',
       category,
-      story,
-      questionPrompt: questionPrompt || 'Do you remember this special moment?',
+      story: story.trim(),
+      questionPrompt: questionPrompt.trim() || 'Do you remember this special moment?',
       image,
       hasAudio: !!audioNote,
       audioNote,
-      tags: [category]
+      tags: [category, relationshipLabel.trim()].filter(Boolean)
     });
 
     audioService.playSuccessChime();
@@ -191,28 +212,66 @@ export default function AddMemoryModal({ isOpen, onClose, onSave }) {
             </div>
           </div>
 
-          {/* Category */}
-          <div>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.3rem', color: 'var(--wine-900)' }}>
-              Category
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+          {error && (
+            <div 
               style={{
-                width: '100%',
-                padding: '0.65rem 0.85rem',
+                backgroundColor: '#fef2f2',
+                border: '1.5px solid #f87171',
                 borderRadius: 'var(--radius-sm)',
-                border: '1.5px solid var(--ivory-border)',
-                fontSize: '0.95rem',
-                backgroundColor: '#ffffff'
+                padding: '0.65rem 0.85rem',
+                color: '#b91c1c',
+                fontSize: '0.88rem',
+                fontWeight: 600
               }}
             >
-              <option value="Travel & Family">Travel & Family</option>
-              <option value="Home & Nature">Home & Nature</option>
-              <option value="Milestones">Milestones & Celebrations</option>
-              <option value="Daily Comfort">Daily Comfort & Traditions</option>
-            </select>
+              ⚠️ {error}
+            </div>
+          )}
+
+          {/* Category & Relationship to Elder */}
+          <div className="grid-2">
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.3rem', color: 'var(--wine-900)' }}>
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1.5px solid var(--ivory-border)',
+                  fontSize: '0.95rem',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <option value="Travel & Family">Travel & Family</option>
+                <option value="Home & Nature">Home & Nature</option>
+                <option value="Milestones">Milestones & Celebrations</option>
+                <option value="Daily Comfort">Daily Comfort & Traditions</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.3rem', color: 'var(--wine-900)' }}>
+                Relationship to Elder *
+              </label>
+              <input
+                type="text"
+                value={relationshipLabel}
+                onChange={(e) => setRelationshipLabel(e.target.value)}
+                placeholder="e.g., Daughter, Grandson, Husband, Friend"
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1.5px solid var(--ivory-border)',
+                  fontSize: '0.95rem',
+                  backgroundColor: '#ffffff'
+                }}
+              />
+            </div>
           </div>
 
           {/* Story Narrative */}

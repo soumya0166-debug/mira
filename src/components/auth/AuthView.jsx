@@ -88,6 +88,7 @@ export default function AuthView({ initialTab = 'signin' }) {
   const [signinCredential, setSigninCredential] = useState('');
 
   // Sign-up form state
+  const [signupRole, setSignupRole] = useState('patient'); // 'patient' | 'guardian'
   const [signupName, setSignupName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPw, setSignupPw] = useState('');
@@ -172,31 +173,59 @@ export default function AuthView({ initialTab = 'signin' }) {
       return;
     }
 
-    const patientProfile = signupLovedName.trim()
-      ? {
-          id: 'pat-' + Date.now(),
-          name: signupLovedName.trim(),
-          preferredName: signupLovedName.trim(),
-          birthYear: '',
-          age: '',
-          avatar: '👵',
-          hobbies: signupLovedHobbies.trim(),
-          childhoodHometown: signupLovedHometown.trim(),
-          emergencyContact: { name: '', phone: '', relationship: '' },
-          doctorInfo: { name: '', clinic: '', phone: '' },
-          notes: ''
-        }
-      : null;
+    let patientProfile = null;
+    let userData = null;
 
-    const userData = {
-      name: trimmedName,
-      email: trimmedEmail,
-      password: signupPw || null,
-      pin: signupPin || null,
-      role: 'guardian',
-      lovedOneName: signupLovedName.trim(),
-      avatar: '🧑'
-    };
+    if (signupRole === 'patient') {
+      patientProfile = {
+        id: 'pat-' + Date.now(),
+        name: trimmedName,
+        preferredName: trimmedName,
+        birthYear: '',
+        age: '',
+        avatar: '👵',
+        hobbies: signupLovedHobbies.trim(),
+        childhoodHometown: signupLovedHometown.trim(),
+        emergencyContact: { name: '', phone: '', relationship: '' },
+        doctorInfo: { name: '', clinic: '', phone: '' },
+        notes: ''
+      };
+
+      userData = {
+        name: trimmedName,
+        email: trimmedEmail,
+        password: signupPw || null,
+        pin: signupPin || null,
+        role: 'patient',
+        avatar: '👵'
+      };
+    } else {
+      patientProfile = signupLovedName.trim()
+        ? {
+            id: 'pat-' + Date.now(),
+            name: signupLovedName.trim(),
+            preferredName: signupLovedName.trim(),
+            birthYear: '',
+            age: '',
+            avatar: '👵',
+            hobbies: signupLovedHobbies.trim(),
+            childhoodHometown: signupLovedHometown.trim(),
+            emergencyContact: { name: '', phone: '', relationship: '' },
+            doctorInfo: { name: '', clinic: '', phone: '' },
+            notes: ''
+          }
+        : null;
+
+      userData = {
+        name: trimmedName,
+        email: trimmedEmail,
+        password: signupPw || null,
+        pin: signupPin || null,
+        role: 'guardian',
+        lovedOneName: signupLovedName.trim(),
+        avatar: '🧑'
+      };
+    }
 
     setLoading(true);
 
@@ -736,26 +765,78 @@ export default function AuthView({ initialTab = 'signin' }) {
                 </p>
               </div>
 
-              {/* Guardian Account Section */}
+              {/* Account Role Selector */}
+              <div>
+                <label style={labelStyle}>I Am Creating An Account For</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole('patient')}
+                    style={{
+                      padding: '0.75rem 0.5rem',
+                      borderRadius: '12px',
+                      border: signupRole === 'patient' ? '2px solid #059669' : '1px solid var(--ivory-border)',
+                      backgroundColor: signupRole === 'patient' ? '#ecfdf5' : '#ffffff',
+                      color: signupRole === 'patient' ? '#065f46' : 'var(--text-main)',
+                      fontWeight: 700,
+                      fontSize: '0.88rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.4rem' }}>👵</span>
+                    <span>Elderly Patient</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>Self-care & games</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSignupRole('guardian')}
+                    style={{
+                      padding: '0.75rem 0.5rem',
+                      borderRadius: '12px',
+                      border: signupRole === 'guardian' ? '2px solid var(--wine-700)' : '1px solid var(--ivory-border)',
+                      backgroundColor: signupRole === 'guardian' ? 'var(--pink-50)' : '#ffffff',
+                      color: signupRole === 'guardian' ? 'var(--wine-900)' : 'var(--text-main)',
+                      fontWeight: 700,
+                      fontSize: '0.88rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.3rem'
+                    }}
+                  >
+                    <span style={{ fontSize: '1.4rem' }}>🛡️</span>
+                    <span>Family Caregiver</span>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 400, color: 'var(--text-muted)' }}>Monitoring & trends</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Account Credentials Section */}
               <div
                 style={{
                   padding: '0.85rem',
-                  background: 'var(--pink-50)',
+                  background: signupRole === 'patient' ? '#f0fdf4' : 'var(--pink-50)',
                   borderRadius: '12px',
-                  border: '1px solid var(--pink-200)',
+                  border: signupRole === 'patient' ? '1px solid #bbf7d0' : '1px solid var(--pink-200)',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.85rem'
                 }}
               >
-                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--wine-700)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  👩‍💼 Guardian / Caregiver Profile
+                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: signupRole === 'patient' ? '#166534' : 'var(--wine-700)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {signupRole === 'patient' ? '👵 Patient Profile' : '👩‍💼 Guardian / Caregiver Profile'}
                 </p>
                 <InputGroup
                   icon={User}
-                  label="Your Full Name"
+                  label={signupRole === 'patient' ? 'Your Full Name' : 'Caregiver Full Name'}
                   type="text"
-                  placeholder="e.g. Priya Kapoor"
+                  placeholder={signupRole === 'patient' ? 'e.g. Radha Barua' : 'e.g. Dr. Ananya Barua'}
                   value={signupName}
                   onChange={(e) => setSignupName(e.target.value)}
                   required
@@ -764,7 +845,7 @@ export default function AuthView({ initialTab = 'signin' }) {
                   icon={Mail}
                   label="Email Address"
                   type="email"
-                  placeholder="priya@example.com"
+                  placeholder={signupRole === 'patient' ? 'radha@example.org' : 'ananya@example.org'}
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   required
@@ -802,7 +883,7 @@ export default function AuthView({ initialTab = 'signin' }) {
                 </div>
               </div>
 
-              {/* Patient Profile Section (Optional) */}
+              {/* Patient Profile Section (Optional for Guardian, Roots for Patient) */}
               <div
                 style={{
                   padding: '0.85rem',
@@ -815,21 +896,25 @@ export default function AuthView({ initialTab = 'signin' }) {
                 }}
               >
                 <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--wine-700)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  👵 Loved One's Profile <span style={{ fontWeight: 400, textTransform: 'none', color: 'var(--text-muted)' }}>(optional)</span>
+                  {signupRole === 'patient'
+                    ? '🌿 Personal Familiar Roots (Optional)'
+                    : '👵 Loved One\'s Profile (Optional)'}
                 </p>
+                {signupRole === 'guardian' && (
+                  <InputGroup
+                    icon={User}
+                    label="Elder's Name"
+                    type="text"
+                    placeholder="e.g. Radha Barua"
+                    value={signupLovedName}
+                    onChange={(e) => setSignupLovedName(e.target.value)}
+                  />
+                )}
                 <InputGroup
                   icon={User}
-                  label="Elder's Name"
+                  label="Childhood Hometown / Village"
                   type="text"
-                  placeholder="e.g. Kamla Devi"
-                  value={signupLovedName}
-                  onChange={(e) => setSignupLovedName(e.target.value)}
-                />
-                <InputGroup
-                  icon={User}
-                  label="Childhood Hometown"
-                  type="text"
-                  placeholder="e.g. Guwahati / Shillong"
+                  placeholder="e.g. Guwahati / Jorhat / Shillong"
                   value={signupLovedHometown}
                   onChange={(e) => setSignupLovedHometown(e.target.value)}
                 />
