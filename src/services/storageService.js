@@ -572,12 +572,20 @@ export const storageService = {
   },
 
   getSettings() {
+    const globalLang = typeof localStorage !== 'undefined' ? localStorage.getItem('mira_app_language') : null;
     const uid = this._uid();
-    if (!uid) return { language: 'en', fontSize: 'normal', mode: 'guardian' };
+    if (!uid) return { language: globalLang || 'en', fontSize: 'normal', mode: 'guardian' };
     const data = localStorage.getItem(k(uid, 'settings'));
-    return data ? JSON.parse(data) : { language: 'en', fontSize: 'normal', mode: 'guardian' };
+    const parsed = data ? JSON.parse(data) : { language: globalLang || 'en', fontSize: 'normal', mode: 'guardian' };
+    if (globalLang && parsed.language !== globalLang) {
+      parsed.language = globalLang;
+    }
+    return parsed;
   },
   saveSettings(settings) {
+    if (settings?.language && typeof localStorage !== 'undefined') {
+      localStorage.setItem('mira_app_language', settings.language);
+    }
     const uid = this._uid();
     if (!uid) return;
     localStorage.setItem(k(uid, 'settings'), JSON.stringify(settings));

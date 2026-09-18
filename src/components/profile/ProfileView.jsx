@@ -72,9 +72,9 @@ export default function ProfileView() {
     <div>
       {/* Title */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ marginBottom: '0.35rem' }}>Care Profiles</h1>
+        <h1 style={{ marginBottom: '0.35rem' }}>{t.profile.title || 'Care Profiles'}</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: 0 }}>
-          Manage personal preferences, familiar memories, and guardian contacts.
+          {t.profile.subtitle || 'Manage personal preferences, familiar memories, and guardian contacts.'}
         </p>
       </div>
 
@@ -91,12 +91,12 @@ export default function ProfileView() {
                     {currentUser.name}
                   </h2>
                   <span className="badge badge-wine" style={{ fontSize: '0.75rem' }}>
-                    {currentUser.role === 'guardian' ? '🛡️ Guardian / Caregiver' : '❤️ Patient / Self-Care'}
+                    {currentUser.role === 'guardian' ? (t.profile.caregiverBadge || '🛡️ Guardian / Caregiver') : (t.profile.patientBadge || '❤️ Patient / Self-Care')}
                   </span>
                 </div>
               </div>
               <button
-                onClick={() => { if (window.confirm('Sign out of MIRA NER?')) logout(); }}
+                onClick={() => { if (window.confirm(t.profile.confirmSignOut || 'Sign out of MIRA NER?')) logout(); }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '0.4rem',
                   padding: '0.4rem 0.9rem', borderRadius: 'var(--radius-full)',
@@ -104,7 +104,7 @@ export default function ProfileView() {
                   color: '#dc2626', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
                 }}
               >
-                <LogOut size={15} /> Sign Out
+                <LogOut size={15} /> {t.profile.signOut || 'Sign Out'}
               </button>
             </div>
 
@@ -136,7 +136,7 @@ export default function ProfileView() {
             <div style={{ borderTop: '1px solid var(--ivory-border)', paddingTop: '1rem' }}>
               {pinSuccess && (
                 <div style={{ padding: '0.5rem 0.85rem', backgroundColor: 'var(--sage-bg)', borderRadius: 'var(--radius-sm)', color: 'var(--sage-green)', fontWeight: 600, fontSize: '0.9rem', marginBottom: '0.75rem' }}>
-                  ✅ PIN updated successfully!
+                  {t.profile.pinSuccess || '✅ PIN updated successfully!'}
                 </div>
               )}
               {!showPinForm ? (
@@ -149,12 +149,12 @@ export default function ProfileView() {
                     color: 'var(--wine-800)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer'
                   }}
                 >
-                  <KeyRound size={14} /> Change 4-Digit PIN
+                  <KeyRound size={14} /> {t.profile.changePin || 'Change 4-Digit PIN'}
                 </button>
               ) : (
                 <form onSubmit={handleSavePin} style={{ display: 'flex', alignItems: 'flex-end', gap: '0.75rem', flexWrap: 'wrap' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>New 4-Digit PIN</label>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.3rem' }}>{t.profile.pinLabel || 'New 4-Digit PIN'}</label>
                     <input
                       type="text" inputMode="numeric" maxLength={4}
                       placeholder="e.g. 5678"
@@ -165,12 +165,12 @@ export default function ProfileView() {
                     {pinError && <p style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '0.2rem' }}>{pinError}</p>}
                   </div>
                   <button type="submit" className="btn-primary" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', minHeight: '42px' }}>
-                    <Check size={15} /> Save PIN
+                    <Check size={15} /> {t.profile.saveChanges || 'Save PIN'}
                   </button>
                   <button type="button" onClick={() => { setShowPinForm(false); setNewPin(''); setPinError(''); }}
                     style={{ fontSize: '0.85rem', padding: '0.5rem 0.85rem', borderRadius: 'var(--radius-full)', backgroundColor: 'var(--ivory-soft)', border: '1px solid var(--ivory-border)', color: 'var(--text-muted)', cursor: 'pointer' }}
                   >
-                    Cancel
+                    {t.profile.cancelEdit || 'Cancel'}
                   </button>
                 </form>
               )}
@@ -208,7 +208,7 @@ export default function ProfileView() {
                   {patient.name} ({patient.preferredName})
                 </h2>
                 <span className="badge badge-pink" style={{ fontSize: '0.75rem' }}>
-                  Loved One / Patient Profile
+                  {t.profile.seniorInfo || 'Loved One / Patient Profile'}
                 </span>
               </div>
             </div>
@@ -218,7 +218,7 @@ export default function ProfileView() {
               className="btn-secondary"
               style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}
             >
-              <Edit3 size={15} /> {isEditingPatient ? 'Cancel' : 'Edit Profile'}
+              <Edit3 size={15} /> {isEditingPatient ? (t.profile.cancelEdit || 'Cancel') : (t.profile.editInfo || 'Edit Profile')}
             </button>
           </div>
 
@@ -233,7 +233,7 @@ export default function ProfileView() {
               <div className="grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Full Name
+                    {t.profile.nameLabel || 'Full Name'}
                   </label>
                   <input
                     type="text"
@@ -245,7 +245,7 @@ export default function ProfileView() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Preferred Call Name / Nickname
+                    {t.profile.preferredNameLabel || 'Preferred Call Name / Nickname'}
                   </label>
                   <input
                     type="text"
@@ -259,7 +259,7 @@ export default function ProfileView() {
               <div className="grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Age (Years: 1–125)
+                    {t.profile.ageLabel || 'Age (Years: 1–125)'}
                   </label>
                   <input
                     type="number"
@@ -273,7 +273,7 @@ export default function ProfileView() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Birth Year (1900–2026)
+                    {t.profile.birthYearLabel || 'Birth Year (1900–2026)'}
                   </label>
                   <input
                     type="number"
@@ -290,7 +290,7 @@ export default function ProfileView() {
               <div className="grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Childhood Hometown
+                    {t.profile.hometownLabel || 'Childhood Hometown'}
                   </label>
                   <input
                     type="text"
@@ -326,7 +326,7 @@ export default function ProfileView() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <button type="submit" className="btn-primary">
-                  <Check size={16} /> Save Patient Profile
+                  <Check size={16} /> {t.profile.saveChanges || 'Save Patient Profile'}
                 </button>
               </div>
             </form>
@@ -335,7 +335,7 @@ export default function ProfileView() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
                 <div style={{ backgroundColor: 'var(--ivory-soft)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
-                    Age & Birth Year
+                    {t.profile.ageLabel || 'Age'} & {t.profile.birthYearLabel || 'Birth Year'}
                   </span>
                   <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
                     {patient.age ? `${patient.age} years old` : '—'} {patient.birthYear ? `(Born ${patient.birthYear})` : ''}
@@ -344,7 +344,7 @@ export default function ProfileView() {
 
                 <div style={{ backgroundColor: 'var(--ivory-soft)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
-                    Childhood Towns & Roots
+                    {t.profile.hometownLabel || 'Childhood Towns & Roots'}
                   </span>
                   <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
                     {patient.childhoodHometown}
@@ -362,7 +362,7 @@ export default function ProfileView() {
 
                 <div style={{ backgroundColor: 'var(--ivory-soft)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
-                    Primary Physician
+                    {t.profile.doctorTitle || 'Primary Physician'}
                   </span>
                   <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
                     {patient?.doctorInfo?.name ? `${patient.doctorInfo.name} (${patient.doctorInfo.clinic || 'Family Clinic'})` : 'Dr. B. K. Sarma (Guwahati Care Clinic)'}
@@ -394,7 +394,7 @@ export default function ProfileView() {
                   {guardian?.name || 'Dr. Ananya Barua'}
                 </h2>
                 <span className="badge badge-wine" style={{ fontSize: '0.75rem' }}>
-                  {guardian?.relation || 'Daughter'} • Primary Guardian
+                  {guardian?.relation || 'Daughter'} • {t.profile.guardianInfo || 'Primary Guardian'}
                 </span>
               </div>
             </div>
@@ -404,7 +404,7 @@ export default function ProfileView() {
               className="btn-secondary"
               style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}
             >
-              <Edit3 size={15} /> {isEditingGuardian ? 'Cancel' : 'Edit Guardian'}
+              <Edit3 size={15} /> {isEditingGuardian ? (t.profile.cancelEdit || 'Cancel') : (t.profile.editInfo || 'Edit Guardian')}
             </button>
           </div>
 
@@ -413,7 +413,7 @@ export default function ProfileView() {
               <div className="grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Guardian Name
+                    {t.profile.nameLabel || 'Guardian Name'}
                   </label>
                   <input
                     type="text"
@@ -425,7 +425,7 @@ export default function ProfileView() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Relationship to Patient
+                    {t.profile.relationLabel || 'Relationship to Patient'}
                   </label>
                   <input
                     type="text"
@@ -439,7 +439,7 @@ export default function ProfileView() {
               <div className="grid-2">
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Contact Phone Number
+                    {t.profile.phoneLabel || 'Contact Phone Number'}
                   </label>
                   <input
                     type="text"
@@ -450,7 +450,7 @@ export default function ProfileView() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.3rem' }}>
-                    Email Address
+                    {t.profile.emailLabel || 'Email Address'}
                   </label>
                   <input
                     type="email"
@@ -463,7 +463,7 @@ export default function ProfileView() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <button type="submit" className="btn-primary">
-                  <Check size={16} /> Save Guardian Profile
+                  <Check size={16} /> {t.profile.saveChanges || 'Save Guardian Profile'}
                 </button>
               </div>
             </form>
@@ -471,7 +471,7 @@ export default function ProfileView() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem' }}>
               <div style={{ backgroundColor: 'var(--ivory-soft)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
-                  Phone / Emergency Line
+                  {t.profile.phoneLabel || 'Phone / Emergency Line'}
                 </span>
                 <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
                   {guardian?.phone || '+91 98765 43210'}
@@ -480,7 +480,7 @@ export default function ProfileView() {
 
               <div style={{ backgroundColor: 'var(--ivory-soft)', padding: '0.85rem', borderRadius: 'var(--radius-sm)' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
-                  Email Address
+                  {t.profile.emailLabel || 'Email Address'}
                 </span>
                 <span style={{ fontWeight: 600, color: 'var(--wine-900)' }}>
                   {guardian?.email || 'ananya@mira.org'}

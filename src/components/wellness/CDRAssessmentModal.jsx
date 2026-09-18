@@ -17,7 +17,7 @@ import {
 } from '../../services/cdrScoringEngine';
 
 export default function CDRAssessmentModal({ isOpen, onClose }) {
-  const { saveCDRAssessment, patient, guardian } = useApp();
+  const { saveCDRAssessment, patient, guardian, t } = useApp();
 
   // State for the 6 domain scores
   const [domainScores, setDomainScores] = useState({
@@ -116,11 +116,11 @@ export default function CDRAssessmentModal({ isOpen, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
             <span style={{ fontSize: '1.6rem' }}>📋</span>
             <h2 style={{ margin: 0, fontSize: '1.45rem', color: 'var(--wine-900)' }}>
-              CDR-Inspired Cognitive Functional Screening
+              {t.wellness.protocolTitle || 'CDR-Inspired Cognitive Functional Screening'}
             </h2>
           </div>
           <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.92rem' }}>
-            Evaluate observed daily function across 6 core domains for {patient?.preferredName || patient?.name || 'the individual'}.
+            {t.wellness.protocolDesc || `Evaluate observed daily function across 6 core domains for ${patient?.preferredName || patient?.name || 'the individual'}.`}
           </p>
         </div>
 
@@ -326,7 +326,7 @@ export default function CDRAssessmentModal({ isOpen, onClose }) {
               className="btn btn-secondary"
               style={{ padding: '0.7rem 1.25rem' }}
             >
-              Cancel
+              {t.profile?.cancelEdit || 'Cancel'}
             </button>
             <button
               type="submit"
@@ -344,11 +344,11 @@ export default function CDRAssessmentModal({ isOpen, onClose }) {
             >
               {isSubmitted ? (
                 <>
-                  <CheckCircle2 size={18} /> Recorded Successfully
+                  <CheckCircle2 size={18} /> {t.common?.playAgain || 'Recorded Successfully'}
                 </>
               ) : (
                 <>
-                  <ClipboardCheck size={18} /> Save Screening Result
+                  <ClipboardCheck size={18} /> {t.wellness?.recordScreening || 'Save Screening Result'}
                 </>
               )}
             </button>

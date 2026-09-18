@@ -25,8 +25,8 @@ export default function Navigation() {
   // ── Segregated Navigation Items ──
   const mainNavItems = isCaregiver
     ? [
-        { id: 'guardian', label: 'Caregiver Hub', icon: ShieldCheck },
-        { id: 'wellness', label: 'Cognitive Trends', icon: Activity },
+        { id: 'guardian', label: t.nav?.caregiverHub || 'Caregiver Hub', icon: ShieldCheck },
+        { id: 'wellness', label: t.nav?.cognitiveTrends || 'Cognitive Trends', icon: Activity },
         { id: 'mira', label: 'MIRA AI', icon: Mic, highlight: true },
         { id: 'memories', label: t.nav?.memory || 'Memories', icon: Sparkles },
         { id: 'routines', label: t.nav?.routine || 'Care Plan', icon: CalendarCheck },
@@ -43,19 +43,19 @@ export default function Navigation() {
 
   const moreItems = isCaregiver
     ? [
-        { id: 'caregiver', label: 'Consent Tiers', icon: Shield },
-        { id: 'games', label: 'Games Suite', icon: Puzzle },
-        { id: 'home', label: 'Elder View Preview', icon: Home },
+        { id: 'caregiver', label: t.nav?.consentTiers || 'Consent Tiers', icon: Shield },
+        { id: 'games', label: t.nav?.gamesSuite || 'Games Suite', icon: Puzzle },
+        { id: 'home', label: t.nav?.elderView || 'Elder View Preview', icon: Home },
         { id: 'notifications', label: t.nav?.notifications || 'Notifications', icon: Bell },
         { id: 'profile', label: t.nav?.profile || 'Profile', icon: User },
         { id: 'settings', label: t.nav?.settings || 'Settings', icon: Settings },
-        { id: 'privacy', label: t.nav?.privacy || 'Privacy & Security', icon: Shield }
+        { id: 'privacy', label: t.nav?.privacySecurity || t.nav?.privacy || 'Privacy & Security', icon: Shield }
       ]
     : [
-        { id: 'profile', label: 'My Profile & ICE', icon: User },
+        { id: 'profile', label: t.nav?.myProfile || t.nav?.profile || 'My Profile & ICE', icon: User },
         { id: 'notifications', label: t.nav?.notifications || 'Reminders', icon: Bell },
-        { id: 'settings', label: 'Language & Display', icon: Settings },
-        { id: 'privacy', label: t.nav?.privacy || 'Privacy & Security', icon: Shield }
+        { id: 'settings', label: t.nav?.languageDisplay || t.nav?.settings || 'Language & Display', icon: Settings },
+        { id: 'privacy', label: t.nav?.privacySecurity || t.nav?.privacy || 'Privacy & Security', icon: Shield }
       ];
 
   return (

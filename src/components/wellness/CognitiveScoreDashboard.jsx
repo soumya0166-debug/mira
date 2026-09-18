@@ -53,12 +53,12 @@ export default function CognitiveScoreDashboard() {
 
   // 6 Domain items for table & card layout
   const domainItems = [
-    { name: 'Memory', code: 'M', score: activeAssessment.memory_score ?? activeAssessment.memory ?? 0, icon: '🧠', desc: 'Recent recall, appointments & conversations' },
-    { name: 'Orientation', code: 'O', score: activeAssessment.orientation_score ?? activeAssessment.orientation ?? 0, icon: '🧭', desc: 'Awareness of time, place & calendar' },
-    { name: 'Judgment & Problem Solving', code: 'JPS', score: activeAssessment.judgment_score ?? activeAssessment.judgment_problem_solving ?? 0, icon: '⚖️', desc: 'Decisions, safety & daily reasoning' },
-    { name: 'Community Affairs', code: 'CA', score: activeAssessment.community_score ?? activeAssessment.community_affairs ?? 0, icon: '🏘️', desc: 'Shopping, social visits & transport' },
-    { name: 'Home & Hobbies', code: 'HH', score: activeAssessment.home_hobbies_score ?? activeAssessment.home_hobbies ?? 0, icon: '🏡', desc: 'Crafts, chores, music & interests' },
-    { name: 'Personal Care', code: 'PC', score: activeAssessment.personal_care_score ?? activeAssessment.personal_care ?? 0, icon: '🧼', desc: 'Dressing, hygiene & independent meals' }
+    { name: t.wellness.domainMemory || 'Memory', code: 'M', score: activeAssessment.memory_score ?? activeAssessment.memory ?? 0, icon: '🧠', desc: 'Recent recall, appointments & conversations' },
+    { name: t.wellness.domainOrientation || 'Orientation', code: 'O', score: activeAssessment.orientation_score ?? activeAssessment.orientation ?? 0, icon: '🧭', desc: 'Awareness of time, place & calendar' },
+    { name: t.wellness.domainJudgment || 'Judgment & Problem Solving', code: 'JPS', score: activeAssessment.judgment_score ?? activeAssessment.judgment_problem_solving ?? 0, icon: '⚖️', desc: 'Decisions, safety & daily reasoning' },
+    { name: t.wellness.domainCommunity || 'Community Affairs', code: 'CA', score: activeAssessment.community_score ?? activeAssessment.community_affairs ?? 0, icon: '🏘️', desc: 'Shopping, social visits & transport' },
+    { name: t.wellness.domainHomeHobbies || 'Home & Hobbies', code: 'HH', score: activeAssessment.home_hobbies_score ?? activeAssessment.home_hobbies ?? 0, icon: '🏡', desc: 'Crafts, chores, music & interests' },
+    { name: t.wellness.domainPersonalCare || 'Personal Care', code: 'PC', score: activeAssessment.personal_care_score ?? activeAssessment.personal_care ?? 0, icon: '🧼', desc: 'Dressing, hygiene & independent meals' }
   ];
 
   // 7-Day Trend computed dynamically from real sessions and activities
@@ -114,10 +114,10 @@ export default function CognitiveScoreDashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ marginBottom: '0.35rem', color: 'var(--wine-900)' }}>
-            Cognitive Wellness & Functional Screening
+            {t.wellness.protocolTitle || 'Cognitive Wellness & Functional Screening'}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '1.02rem', margin: 0 }}>
-            CDR-inspired multi-domain functional screening, longitudinal change monitoring & daily cognitive stimulation.
+            {t.wellness.protocolDesc || 'CDR-inspired multi-domain functional screening, longitudinal change monitoring & daily cognitive stimulation.'}
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export default function CognitiveScoreDashboard() {
             boxShadow: 'var(--shadow-md)'
           }}
         >
-          <PlusCircle size={18} /> Record New Screening
+          <PlusCircle size={18} /> {t.wellness.recordScreening || 'Record New Screening'}
         </button>
       </div>
 
@@ -189,7 +189,7 @@ export default function CognitiveScoreDashboard() {
               fontSize: '0.85rem'
             }}
           >
-            CDR-Inspired Cognitive Functional Screening
+            {t.wellness.screeningHeroBadge || 'CDR-Inspired Cognitive Functional Screening'}
           </span>
 
           {activeAssessment.assessment_date && (
@@ -202,7 +202,7 @@ export default function CognitiveScoreDashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: '0.92rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' }}>
-              Screening Result (Sum of Boxes)
+              {t.wellness.screeningResult || 'Screening Result (Sum of Boxes)'}
             </div>
             
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
@@ -210,13 +210,13 @@ export default function CognitiveScoreDashboard() {
                 {activeAssessment.total_score.toFixed(1)}
               </span>
               <span style={{ fontSize: '1.35rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                / 18
+                {t.wellness.outOf18 || '/ 18'}
               </span>
             </div>
 
             <div style={{ marginBottom: '1rem' }}>
               <span style={{ fontSize: '1.05rem', color: 'var(--wine-900)', fontWeight: 600 }}>
-                Observed Level:{' '}
+                {t.wellness.observedLevelLabel || 'Observed Level:'}{' '}
               </span>
               <span 
                 className="badge"
@@ -229,7 +229,7 @@ export default function CognitiveScoreDashboard() {
                   padding: '0.35rem 0.85rem'
                 }}
               >
-                {activeAssessment.observed_level} cognitive/functional difficulty
+                {activeAssessment.observed_level} {t.wellness.difficultySuffix || 'cognitive/functional difficulty'}
               </span>
             </div>
 
@@ -241,28 +241,28 @@ export default function CognitiveScoreDashboard() {
           {/* Quick Score Range Guide Bar */}
           <div style={{ backgroundColor: '#f8fafc', padding: '1.25rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--wine-900)', marginBottom: '0.75rem', textTransform: 'uppercase' }}>
-              Research Reference Ranges
+              {t.wellness.researchRanges || 'Research Reference Ranges'}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.82rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
                 <span>0.0</span>
-                <span>No observed difficulty</span>
+                <span>{t.wellness.noDifficulty || 'No observed difficulty'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0284c7', fontWeight: activeAssessment.total_score > 0 && activeAssessment.total_score <= 4.0 ? 'bold' : 'normal' }}>
                 <span>0.5 – 4.0</span>
-                <span>Very mild difficulty</span>
+                <span>{t.wellness.mildDifficulty || 'Very mild difficulty'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#d97706', fontWeight: activeAssessment.total_score >= 4.5 && activeAssessment.total_score <= 9.0 ? 'bold' : 'normal' }}>
                 <span>4.5 – 9.0</span>
-                <span>Mild difficulty</span>
+                <span>{t.wellness.mildDifficulty || 'Mild difficulty'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ea580c', fontWeight: activeAssessment.total_score >= 9.5 && activeAssessment.total_score <= 15.5 ? 'bold' : 'normal' }}>
                 <span>9.5 – 15.5</span>
-                <span>Moderate difficulty</span>
+                <span>{t.wellness.moderateDifficulty || 'Moderate difficulty'}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626', fontWeight: activeAssessment.total_score >= 16.0 ? 'bold' : 'normal' }}>
                 <span>16.0 – 18.0</span>
-                <span>Severe difficulty</span>
+                <span>{t.wellness.severeDifficulty || 'Severe difficulty'}</span>
               </div>
             </div>
           </div>
@@ -276,7 +276,7 @@ export default function CognitiveScoreDashboard() {
         {/* Left: 6-Domain Score Breakdown */}
         <div className="mira-card" style={{ padding: '1.5rem' }}>
           <h2 style={{ fontSize: '1.25rem', color: 'var(--wine-900)', margin: '0 0 0.4rem' }}>
-            Domain Assessment Breakdown
+            {t.wellness.domainsTitle || 'Domain Assessment Breakdown'}
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0 0 1.25rem' }}>
             Sum of individual scores across the 6 cognitive and functional domains (0 to 3 each).

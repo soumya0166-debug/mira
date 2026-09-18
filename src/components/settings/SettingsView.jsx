@@ -30,13 +30,13 @@ export default function SettingsView({ onNavigateTab }) {
       <div style={{ marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
           <Settings size={20} />
-          <span>Accessibility & Personalization</span>
+          <span>{t.settings.tag || 'Accessibility & Personalization'}</span>
         </div>
         <h1 style={{ margin: '0 0 0.5rem', color: 'var(--text-main)', fontSize: '2rem' }}>
-          Settings & Preferences
+          {t.settings.title || 'Settings & Preferences'}
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: 0 }}>
-          Customize text size, language, high contrast, and voice speed for maximum comfort.
+          {t.settings.subtitle || 'Customize text size, language, high contrast, and voice speed for maximum comfort.'}
         </p>
       </div>
 
@@ -46,10 +46,10 @@ export default function SettingsView({ onNavigateTab }) {
           <Languages size={22} style={{ color: 'var(--primary-teal)' }} />
           <div>
             <strong style={{ fontSize: '1.15rem', color: 'var(--text-main)', display: 'block' }}>
-              North Eastern Regional Languages (10 Supported)
+              {t.settings.languagesTitle || 'North Eastern Regional Languages (10 Supported)'}
             </strong>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Select your native tongue for MIRA voice conversation and UI text
+              {t.settings.languagesDesc || 'Select your native tongue for MIRA voice conversation and UI text'}
             </span>
           </div>
         </div>
@@ -94,19 +94,19 @@ export default function SettingsView({ onNavigateTab }) {
           <Type size={22} style={{ color: 'var(--primary-teal)' }} />
           <div>
             <strong style={{ fontSize: '1.15rem', color: 'var(--text-main)', display: 'block' }}>
-              Readability & Font Size
+              {t.settings.readabilityTitle || 'Readability & Font Size'}
             </strong>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Increase font scale for relaxed reading without eye strain
+              {t.settings.readabilityDesc || 'Increase font scale for relaxed reading without eye strain'}
             </span>
           </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
           {[
-            { id: 'normal', label: 'Standard (100%)', sample: 'Aa' },
-            { id: 'large', label: 'Large (125%)', sample: 'Aa+' },
-            { id: 'xlarge', label: 'Extra Large (150%)', sample: 'Aa++' }
+            { id: 'normal', label: t.settings.standard || 'Standard (100%)', sample: 'Aa' },
+            { id: 'large', label: t.settings.large || 'Large (125%)', sample: 'Aa+' },
+            { id: 'xlarge', label: t.settings.extraLarge || 'Extra Large (150%)', sample: 'Aa++' }
           ].map((f) => {
             const isSelected = fontSize === f.id;
             return (
@@ -141,10 +141,10 @@ export default function SettingsView({ onNavigateTab }) {
             <Eye size={22} style={{ color: 'var(--primary-teal)' }} />
             <div>
               <strong style={{ fontSize: '1.15rem', color: 'var(--text-main)', display: 'block' }}>
-                High Contrast Accessibility Mode
+                {t.settings.highContrastTitle || 'High Contrast Accessibility Mode'}
               </strong>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Enhance contrast to WCAG AAA standards for seniors with low vision
+                {t.settings.highContrastDesc || 'Enhance contrast to WCAG AAA standards for seniors with low vision'}
               </span>
             </div>
           </div>
@@ -162,7 +162,7 @@ export default function SettingsView({ onNavigateTab }) {
               cursor: 'pointer'
             }}
           >
-            {highContrast ? 'Active (High Contrast)' : 'Off (Natural)'}
+            {highContrast ? (t.settings.highContrastActive || 'Active (High Contrast)') : (t.settings.highContrastOff || 'Off (Natural)')}
           </button>
         </div>
       </div>
@@ -174,10 +174,10 @@ export default function SettingsView({ onNavigateTab }) {
             <Database size={22} style={{ color: 'var(--primary-teal)' }} />
             <div>
               <strong style={{ fontSize: '1.15rem', color: 'var(--text-main)', display: 'block' }}>
-                Offline Cognitive Activity Library
+                {t.settings.offlineLibraryTitle || 'Offline Cognitive Activity Library'}
               </strong>
               <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Pre-download and cache cognitive sessions for uninterrupted use in remote areas
+                {t.settings.offlineLibraryDesc || 'Pre-download and cache cognitive sessions for uninterrupted use in remote areas'}
               </span>
             </div>
           </div>
@@ -187,7 +187,7 @@ export default function SettingsView({ onNavigateTab }) {
               setIsDownloading(true);
               const count = await refreshOfflineContent();
               setIsDownloading(false);
-              setDownloadMsg(`Successfully updated offline library! ${count} activities ready.`);
+              setDownloadMsg(`${t.settings.downloadSuccess || 'Successfully updated offline library!'} ${count} ${t.settings.activitiesReady || 'activities ready'}.`);
               audioService.playSuccessChime();
               setTimeout(() => setDownloadMsg(null), 4000);
             }}
@@ -207,7 +207,7 @@ export default function SettingsView({ onNavigateTab }) {
             }}
           >
             <Download size={16} />
-            {isDownloading ? 'Downloading…' : 'Download Offline Content'}
+            {isDownloading ? (t.settings.downloading || 'Downloading…') : (t.settings.downloadOffline || 'Download Offline Content')}
           </button>
         </div>
 
@@ -233,21 +233,21 @@ export default function SettingsView({ onNavigateTab }) {
 
         <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
           <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Available Offline:</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.settings.activitiesReady ? `${t.settings.activitiesReady}:` : 'Available Offline:'}</span>
             <strong style={{ display: 'block', fontSize: '1.05rem', color: '#0e4a42' }}>
-              {offlineActivitiesCount || 18} Activities Ready
+              {offlineActivitiesCount || 18} {t.settings.activitiesReady || 'Activities Ready'}
             </strong>
           </div>
           <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Local Database:</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.settings.localDatabase ? `${t.settings.localDatabase}:` : 'Local Database:'}</span>
             <strong style={{ display: 'block', fontSize: '1.05rem', color: '#15803d' }}>
-              {storageHealth?.status || 'Healthy'} IndexedDB Vault ({storageHealth?.usageMB || '2.4'} MB)
+              {storageHealth?.status || 'Healthy'} {t.settings.healthyVault || 'IndexedDB Vault'} ({storageHealth?.usageMB || '2.4'} MB)
             </strong>
           </div>
           <div>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Current Status:</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{t.settings.currentStatus ? `${t.settings.currentStatus}:` : 'Current Status:'}</span>
             <strong style={{ display: 'block', fontSize: '1.05rem', color: isOnline ? '#15803d' : '#1d4ed8' }}>
-              {isOnline ? '🟢 Connected' : '🔵 Offline (Active)'}
+              {isOnline ? (t.settings.connected || '🟢 Connected') : (t.settings.offlineActive || '🔵 Offline (Active)')}
             </strong>
           </div>
         </div>
@@ -268,7 +268,7 @@ export default function SettingsView({ onNavigateTab }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Shield size={20} style={{ color: 'var(--primary-teal)' }} />
           <span style={{ fontSize: '0.95rem', color: 'var(--text-main)' }}>
-            Data Privacy, Row Level Security & Non-Medical Principles
+            {t.settings.privacyBanner || 'Data Privacy, Row Level Security & Non-Medical Principles'}
           </span>
         </div>
         <button
@@ -276,7 +276,7 @@ export default function SettingsView({ onNavigateTab }) {
           className="mira-btn-secondary"
           style={{ padding: '0.45rem 1rem', fontSize: '0.85rem' }}
         >
-          View Privacy Policy
+          {t.settings.viewPrivacy || 'View Privacy Policy'}
         </button>
       </div>
     </div>

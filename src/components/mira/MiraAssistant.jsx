@@ -31,11 +31,11 @@ export default function MiraAssistant({ onNavigateTab }) {
   }, [messages, voiceState]);
 
   const quickPrompts = [
-    { label: 'What is my routine today?', icon: '🕒', query: 'What is my routine today?' },
-    { label: 'What memories did I save?', icon: '📖', query: 'What memories did I save in my album?' },
-    { label: 'Who is coming to visit today?', icon: '👥', query: 'Who is coming today?' },
-    { label: 'Start a memory activity', icon: '🦏', query: 'Start a memory activity with North Eastern treasures' },
-    { label: 'What should I do next?', icon: '🌿', query: 'What should I do next to feel calm and rested?' }
+    { label: t.mira?.promptRoutine || 'What is my routine today?', icon: '🕒', query: 'What is my routine today?' },
+    { label: t.mira?.promptMemories || 'What memories did I save?', icon: '📖', query: 'What memories did I save in my album?' },
+    { label: t.mira?.promptFamily || 'Who is coming to visit today?', icon: '👥', query: 'Who is coming today?' },
+    { label: t.mira?.promptGame || 'Start a memory activity', icon: '🦏', query: 'Start a memory activity with North Eastern treasures' },
+    { label: t.mira?.promptComfort || 'What should I do next?', icon: '🌿', query: 'What should I do next to feel calm and rested?' }
   ];
 
   const handleSendMessage = async (userQuery) => {

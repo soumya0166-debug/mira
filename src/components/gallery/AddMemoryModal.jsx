@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Image as ImageIcon, Sparkles, Check, Upload } from 'lucide-react';
 import VoiceRecorder from '../common/VoiceRecorder';
 import audioService from '../../services/audioService';
+import { useApp } from '../../context/AppContext';
 
 const SAMPLE_PHOTO_PRESETS = [
   {
@@ -19,6 +20,7 @@ const SAMPLE_PHOTO_PRESETS = [
 ];
 
 export default function AddMemoryModal({ isOpen, onClose, onSave }) {
+  const { t } = useApp();
   const [title, setTitle] = useState('');
   const [year, setYear] = useState('');
   const [relationshipLabel, setRelationshipLabel] = useState('Daughter');
@@ -86,7 +88,7 @@ export default function AddMemoryModal({ isOpen, onClose, onSave }) {
       <div className="modal-dialog">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <h2 id="add-memory-title" style={{ margin: 0, fontSize: '1.4rem' }}>
-            Add a Cherished Memory
+            {t?.gallery?.addMemoryModalTitle || 'Add a Cherished Memory'}
           </h2>
           <button 
             onClick={onClose} 

@@ -13,7 +13,13 @@ export default function MemoryGallery() {
   const [slideshowOpen, setSlideshowOpen] = useState(false);
   const [slideshowIndex, setSlideshowIndex] = useState(0);
 
-  const categories = ['All', 'Travel & Family', 'Home & Nature', 'Milestones', 'Daily Comfort'];
+  const categories = [
+    { key: 'All', label: t.gallery?.filterAll || 'All' },
+    { key: 'Travel & Family', label: t.gallery?.catTravel || 'Travel & Family' },
+    { key: 'Home & Nature', label: t.gallery?.catHome || 'Home & Nature' },
+    { key: 'Milestones', label: t.gallery?.catMilestones || 'Milestones' },
+    { key: 'Daily Comfort', label: t.gallery?.catDaily || 'Daily Comfort' }
+  ];
 
   const filteredMemories = selectedCategory === 'All'
     ? memories
@@ -47,8 +53,8 @@ export default function MemoryGallery() {
         {/* Primary action buttons */}
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <SpeakButton 
-            text={`${t.gallery.title}. ${t.gallery.subtitle}. You have ${memories.length} memories saved.`} 
-            label="Listen to Memories" 
+            text={`${t.gallery.title}. ${t.gallery.subtitle}.`} 
+            label={t.gallery.listenAudio || 'Listen to Memories'} 
             variant="senior" 
           />
 
@@ -82,19 +88,19 @@ export default function MemoryGallery() {
       >
         {categories.map((cat) => (
           <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
+            key={cat.key}
+            onClick={() => setSelectedCategory(cat.key)}
             className="badge"
             style={{
               padding: '0.45rem 0.9rem',
-              backgroundColor: selectedCategory === cat ? 'var(--wine-700)' : 'var(--ivory-card)',
-              color: selectedCategory === cat ? '#ffffff' : 'var(--text-muted)',
-              border: '1px solid ' + (selectedCategory === cat ? 'var(--wine-700)' : 'var(--ivory-border)'),
-              boxShadow: selectedCategory === cat ? '0 2px 6px rgba(107, 29, 47, 0.2)' : 'none',
+              backgroundColor: selectedCategory === cat.key ? 'var(--wine-700)' : 'var(--ivory-card)',
+              color: selectedCategory === cat.key ? '#ffffff' : 'var(--text-muted)',
+              border: '1px solid ' + (selectedCategory === cat.key ? 'var(--wine-700)' : 'var(--ivory-border)'),
+              boxShadow: selectedCategory === cat.key ? '0 2px 6px rgba(107, 29, 47, 0.2)' : 'none',
               cursor: 'pointer'
             }}
           >
-            {cat === 'All' ? t.gallery.filterAll : cat}
+            {cat.label}
           </button>
         ))}
       </div>
@@ -112,7 +118,7 @@ export default function MemoryGallery() {
           <Sparkles size={40} style={{ color: 'var(--pink-300)', marginBottom: '0.75rem' }} />
           <h3>{t.gallery.noMemories}</h3>
           <p style={{ color: 'var(--text-muted)', maxWidth: '400px', margin: '0.5rem auto 1.5rem' }}>
-            Add beloved photographs, recorded voice notes, and familiar stories to spark joy and reminiscence.
+            {t.gallery.noMemoriesDesc || 'Add beloved photographs, recorded voice notes, and familiar stories to spark joy and reminiscence.'}
           </p>
           <button onClick={() => setIsAddModalOpen(true)} className="btn-primary">
             <Plus size={18} /> {t.gallery.addMemory}

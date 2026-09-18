@@ -21,6 +21,41 @@ const THEMES_BY_LANG = {
     { target: '🦏', distractor: '🐃', targetName: 'কাজিরাঙার একশৃঙ্গ গণ্ডার', distractorName: 'বুনো মহিষ' },
     { target: '🪶', distractor: '🍃', targetName: 'ধনেশের সোনালী পালক', distractorName: 'অরণ্যের পাতা' },
     { target: '🌸', distractor: '🌿', targetName: 'নীল বন্য অর্কিড', distractorName: 'নদী তীরের ঘাস' }
+  ],
+  brx: [
+    { target: '🦏', distractor: '🐃', targetName: 'काजिरंगा गंसे गन्दै', distractorName: 'मोसौ' },
+    { target: '🪶', distractor: '🍃', targetName: 'दाउ गाबफ्ला', distractorName: 'बिलाइ' },
+    { target: '🌸', distractor: '🌿', targetName: 'अर्खिद बिबार', distractorName: 'गांसो' }
+  ],
+  mni: [
+    { target: '🦏', distractor: '🐃', targetName: 'কাজিরঙ্গা সমুক', distractorName: 'ইরোই' },
+    { target: '🪶', distractor: '🍃', targetName: 'উচেক মচু', distractorName: 'উনা' },
+    { target: '🌸', distractor: '🌿', targetName: 'শিরুই লিলি লৈবা', distractorName: 'হিংচাবি' }
+  ],
+  kha: [
+    { target: '🦏', distractor: '🐃', targetName: 'Kaziranga Rhino', distractorName: 'Masi Khlaw' },
+    { target: '🪶', distractor: '🍃', targetName: 'Sner Sim', distractorName: 'Sla Dieng' },
+    { target: '🌸', distractor: '🌿', targetName: 'Tiew Kulab Khlaw', distractorName: 'Phlang' }
+  ],
+  lus: [
+    { target: '🦏', distractor: '🐃', targetName: 'Kaziranga Sai Ki-khat', distractorName: 'Sial' },
+    { target: '🪶', distractor: '🍃', targetName: 'Vava Hmul', distractorName: 'Hnah' },
+    { target: '🌸', distractor: '🌿', targetName: 'Hruizel Par', distractorName: 'Hnim' }
+  ],
+  grt: [
+    { target: '🦏', distractor: '🐃', targetName: 'Kaziranga Gongge', distractorName: 'Matma' },
+    { target: '🪶', distractor: '🍃', targetName: 'Do·o Kimil', distractorName: 'Bijak' },
+    { target: '🌸', distractor: '🌿', targetName: 'A·beng Bibal', distractorName: 'Sam' }
+  ],
+  trp: [
+    { target: '🦏', distractor: '🐃', targetName: 'Kaziranga Gandai', distractorName: 'Mwsani' },
+    { target: '🪶', distractor: '🍃', targetName: 'Takhuk Bwphang', distractorName: 'Bilai' },
+    { target: '🌸', distractor: '🌿', targetName: 'Khumbar Phul', distractorName: 'Hathai' }
+  ],
+  nag: [
+    { target: '🦏', distractor: '🐃', targetName: 'Kaziranga Ek-Sing Ganda', distractorName: 'Jongli Moh' },
+    { target: '🪶', distractor: '🍃', targetName: 'Hornbill Pakhi', distractorName: 'Jongol Paat' },
+    { target: '🌸', distractor: '🌿', targetName: 'Jongli Phool', distractorName: 'Ghaas' }
   ]
 };
 
@@ -268,7 +303,7 @@ export default function AttentionChallengeGame({ onNextActivity }) {
               className="mira-btn-primary"
               style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
-              <RotateCcw size={18} /> Play Again
+              <RotateCcw size={18} /> {t.common?.playAgain || 'Play Again'}
             </button>
             {onNextActivity && (
               <button
@@ -276,7 +311,7 @@ export default function AttentionChallengeGame({ onNextActivity }) {
                 className="mira-btn-secondary"
                 style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
               >
-                <span>Next Cognitive Activity</span> <ArrowRight size={18} />
+                <span>{t.common?.nextActivity || 'Next Cognitive Activity'}</span> <ArrowRight size={18} />
               </button>
             )}
           </div>

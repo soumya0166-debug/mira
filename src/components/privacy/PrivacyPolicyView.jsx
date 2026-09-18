@@ -11,13 +11,13 @@ export default function PrivacyPolicyView() {
       <div style={{ marginBottom: '1.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.25rem' }}>
           <Shield size={20} />
-          <span>Patient Trust, Ethics & Security</span>
+          <span>{t.privacy.tag || 'Patient Trust, Ethics & Security'}</span>
         </div>
         <h1 style={{ margin: '0 0 0.5rem', color: 'var(--text-main)', fontSize: '2rem' }}>
-          Privacy, Ethics & Non-Medical Principles
+          {t.privacy.title || 'Privacy, Ethics & Non-Medical Principles'}
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', margin: 0 }}>
-          MIND AI – NER architectural commitment to user isolation, clinical safety, and data sovereignty.
+          {t.privacy.subtitle || 'MIND AI – NER architectural commitment to user isolation, clinical safety, and data sovereignty.'}
         </p>
       </div>
 
@@ -36,19 +36,19 @@ export default function PrivacyPolicyView() {
           <AlertTriangle size={24} style={{ color: '#b45309', flexShrink: 0, marginTop: '0.2rem' }} />
           <div>
             <h3 style={{ margin: '0 0 0.35rem', color: '#92400e', fontSize: '1.2rem' }}>
-              Important Product Principle (Non-Diagnostic Application)
+              {t.privacy.principleTitle || 'Important Product Principle (Non-Diagnostic Application)'}
             </h3>
             <p style={{ margin: '0 0 0.75rem', color: '#92400e', fontSize: '0.95rem', lineHeight: 1.5 }}>
-              MIND AI is <strong>NOT</strong> a medical diagnosis application. It never claims that it diagnoses dementia, measures medical severity with clinical accuracy, or replaces physicians and neurologists.
+              {t.privacy.principleDesc || 'MIND AI is NOT a medical diagnosis application. It never claims that it diagnoses dementia, measures medical severity with clinical accuracy, or replaces physicians and neurologists.'}
             </p>
             <div style={{ fontSize: '0.9rem', color: '#78350f' }}>
-              We strictly utilize supportive terminology:
+              {t.privacy.supportiveTerms || 'We strictly utilize supportive terminology:'}
               <ul style={{ margin: '0.5rem 0 0', paddingLeft: '1.25rem' }}>
-                <li><strong>Cognitive Activity:</strong> Stimulating puzzles rooted in regional culture.</li>
-                <li><strong>Engagement & Joy:</strong> Daily participation without clinical judgment.</li>
-                <li><strong>Memory Support:</strong> Reminiscing about cherished family keepsakes.</li>
-                <li><strong>Routine Assistance:</strong> Soothing reminders for morning tea and walks.</li>
-                <li><strong>Wellness Support:</strong> Promoting comfort, hydration, and family connection.</li>
+                <li>{t.privacy.cognitiveActivity || 'Cognitive Activity: Stimulating puzzles rooted in regional culture.'}</li>
+                <li>{t.privacy.engagementJoy || 'Engagement & Joy: Daily participation without clinical judgment.'}</li>
+                <li>{t.privacy.memorySupport || 'Memory Support: Reminiscing about cherished family keepsakes.'}</li>
+                <li>{t.privacy.routineAssistance || 'Routine Assistance: Soothing reminders for morning tea and walks.'}</li>
+                <li>{t.privacy.wellnessSupport || 'Wellness Support: Promoting comfort, hydration, and family connection.'}</li>
               </ul>
             </div>
           </div>
@@ -60,20 +60,20 @@ export default function PrivacyPolicyView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
           <Lock size={22} style={{ color: 'var(--primary-teal)' }} />
           <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '1.25rem' }}>
-            Row Level Security & Complete User Data Isolation
+            {t.privacy.rlsTitle || 'Row Level Security & Complete User Data Isolation'}
           </h3>
         </div>
         <p style={{ margin: '0 0 1rem', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: 1.55 }}>
-          In our PostgreSQL / Supabase architecture, every single table is protected by Row Level Security (RLS). A user can NEVER access another individual's:
+          {t.privacy.rlsDesc || "In our PostgreSQL / Supabase architecture, every single table is protected by Row Level Security (RLS). A user can NEVER access another individual's:"}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
           {[
-            'Private Memory Items',
-            'Daily Routine Schedules',
-            'Cognitive Activity Sessions',
-            'Mood & Wellness Check-ins',
-            'Caregiver Connections',
-            'User Profiles & Names'
+            t.privacy.itemMemories || 'Private Memory Items',
+            t.privacy.itemRoutines || 'Daily Routine Schedules',
+            t.privacy.itemActivities || 'Cognitive Activity Sessions',
+            t.privacy.itemWellness || 'Mood & Wellness Check-ins',
+            t.privacy.itemCaregiver || 'Caregiver Connections',
+            t.privacy.itemProfiles || 'User Profiles & Names'
           ].map((item, idx) => (
             <div
               key={idx}

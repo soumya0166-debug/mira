@@ -161,7 +161,7 @@ export default function Header() {
                   {!isOnline ? '🔵' : (syncStatus === 'syncing' ? '🟡' : (pendingCount > 0 ? '🔴' : '🟢'))}
                 </span>
                 <span>
-                  {!isOnline ? 'Offline — Saved' : (syncStatus === 'syncing' ? 'Syncing…' : (pendingCount > 0 ? `Sync Pending (${pendingCount})` : 'Online — Synced'))}
+                  {!isOnline ? (t.common?.offlineSaved || 'Offline — Saved') : (syncStatus === 'syncing' ? (t.common?.syncing || 'Syncing…') : (pendingCount > 0 ? `${t.common?.syncPending || 'Sync Pending'} (${pendingCount})` : (t.common?.onlineSynced || 'Online — Synced')))}
                 </span>
               </div>
             </div>
@@ -212,7 +212,7 @@ export default function Header() {
             }}
           >
             {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>{voiceEnabled ? 'Voice ON' : 'Voice OFF'}</span>
+            <span>{voiceEnabled ? (t.common?.voiceOn || 'Voice ON') : (t.common?.voiceOff || 'Voice OFF')}</span>
           </button>
 
           {/* Quick Sound Chime Test */}
@@ -392,12 +392,12 @@ export default function Header() {
               {isPatient ? (
                 <>
                   <Shield size={16} />
-                  <span>{t.guardianMode || 'Guardian Hub'}</span>
+                  <span>{t.common?.guardianHub || t.guardianMode || 'Guardian Hub'}</span>
                 </>
               ) : (
                 <>
                   <UserCheck size={16} />
-                  <span>Preview Elder View</span>
+                  <span>{t.common?.previewElder || 'Preview Elder View'}</span>
                 </>
               )}
             </button>
@@ -487,7 +487,7 @@ export default function Header() {
                   }}
                 >
                   <User size={15} style={{ color: 'var(--wine-600)' }} />
-                  Care Profile &amp; Account
+                  {t.profile?.title || 'Care Profile & Account'}
                 </button>
 
                 {/* Switch Account */}
@@ -538,7 +538,7 @@ export default function Header() {
                     }}
                   >
                     <LogOut size={15} />
-                    Sign Out
+                    {t.profile?.signOut || t.common?.signOut || 'Sign Out'}
                   </button>
                 </div>
               </div>
