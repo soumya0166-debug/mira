@@ -244,6 +244,13 @@ class AudioService {
     window.speechSynthesis.speak(utterance);
   }
 
+  /**
+   * Alias for speakText to ensure backwards and cross-component compatibility
+   */
+  speak(text, lang = 'en', onStart, onEnd) {
+    return this.speakText(text, lang, onStart, onEnd);
+  }
+
   stopSpeaking() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();

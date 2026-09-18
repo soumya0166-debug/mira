@@ -14,6 +14,7 @@ export default function MemoryMatchGame({ onNextActivity }) {
   const [flipped, setFlipped] = useState([]);
   const [matched, setMatched] = useState([]);
   const [moves, setMoves] = useState(0);
+  const [errors, setErrors] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [adaptiveInfo, setAdaptiveInfo] = useState(null);
@@ -198,7 +199,7 @@ export default function MemoryMatchGame({ onNextActivity }) {
             className="mira-btn-secondary"
             style={{ padding: '0.4rem 0.85rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
           >
-            <RotateCcw size={16} /> Reset Cards
+            <RotateCcw size={16} /> {t.common?.reset || 'Reset Cards'}
           </button>
         </div>
       </div>
@@ -247,7 +248,7 @@ export default function MemoryMatchGame({ onNextActivity }) {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--primary-teal)' }}>
                   <span style={{ fontSize: '2rem', opacity: 0.7 }}>🌸</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontWeight: 600 }}>Tap to Reveal</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', fontWeight: 600 }}>{t.common?.tapToReveal || 'Tap to Reveal'}</span>
                 </div>
               )}
             </button>
@@ -282,7 +283,7 @@ export default function MemoryMatchGame({ onNextActivity }) {
               className="mira-btn-primary"
               style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
             >
-              <RotateCcw size={18} /> Play Again
+              <RotateCcw size={18} /> {t.common?.playAgain || 'Play Again'}
             </button>
             {onNextActivity && (
               <button
@@ -290,7 +291,7 @@ export default function MemoryMatchGame({ onNextActivity }) {
                 className="mira-btn-secondary"
                 style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
               >
-                <span>Next Cognitive Activity</span> <ArrowRight size={18} />
+                <span>{t.common?.nextActivity || 'Next Cognitive Activity'}</span> <ArrowRight size={18} />
               </button>
             )}
           </div>
