@@ -44,10 +44,48 @@
   --card-bg: #ffffff;
   --border-subtle: #e5e7eb;
 
+  /* Google Stitch MIRA Design System Tokens */
+  --stitch-surface: #f2fcf4;
+  --stitch-surface-dim: #d2ddd5;
+  --stitch-surface-bright: #f2fcf4;
+  --stitch-surface-container-lowest: #ffffff;
+  --stitch-surface-container-low: #ecf6ee;
+  --stitch-surface-container: #e6f0e8;
+  --stitch-surface-container-high: #e1ebe3;
+  --stitch-surface-container-highest: #dbe5dd;
+  --stitch-on-surface: #151d19;
+  --stitch-on-surface-variant: #404945;
+  --stitch-outline: #707974;
+  --stitch-outline-variant: #c0c9c3;
+  --stitch-surface-tint: #376757;
+
+  --stitch-primary: #003629;
+  --stitch-primary-container: #1b4d3e;
+  --stitch-on-primary: #ffffff;
+  --stitch-on-primary-container: #8abda9;
+  --stitch-primary-fixed: #baeed9;
+  --stitch-primary-fixed-dim: #9ed1bd;
+
+  --stitch-secondary: #236868;
+  --stitch-secondary-container: #aaebeb;
+  --stitch-on-secondary: #ffffff;
+  --stitch-on-secondary-container: #296c6c;
+  --stitch-secondary-fixed: #adeeee;
+
+  --stitch-tertiary: #591800;
+  --stitch-tertiary-container: #7f2600;
+  --stitch-tertiary-cta: #c85a32;
+  --stitch-on-tertiary: #ffffff;
+  --stitch-tertiary-fixed: #ffdbcf;
+  --stitch-tertiary-fixed-dim: #ffb59c;
+
+  --stitch-turmeric: #e8a838;
+
   /* Elevation */
   --shadow-sm: 0 2px 6px rgba(14, 74, 66, 0.05);
   --shadow-md: 0 4px 14px rgba(14, 74, 66, 0.08);
   --shadow-lg: 0 10px 28px rgba(14, 74, 66, 0.12);
+  --shadow-tactile: 0 6px 20px -4px rgba(28, 37, 32, 0.08);
 
   /* Radius */
   --radius-sm: 10px;
@@ -56,12 +94,33 @@
   --radius-full: 9999px;
 
   /* Font Scaling Options */
-  --font-base: 16px;
-  --font-h1: 1.85rem;
-  --font-h2: 1.45rem;
-  --font-h3: 1.2rem;
-  --font-body: 1rem;
-  --font-sub: 0.875rem;
+  --font-base: 18px;
+  --font-h1: 2rem;
+  --font-h2: 1.6rem;
+  --font-h3: 1.3rem;
+  --font-body: 1.1rem;
+  --font-sub: 0.95rem;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  background-color: var(--stitch-surface);
+  color: var(--stitch-on-surface);
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined' !important;
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  vertical-align: middle;
 }
 
 /* High Contrast Mode (WCAG AAA) */
@@ -442,3 +501,76 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     padding: 1.25rem;
   }
 }
+
+/* Stitch Tactile Helpers & Voice Elements */
+.stitch-container {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1rem 1rem 6.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.stitch-card {
+  background-color: var(--stitch-surface-container-lowest);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 4px 16px -2px rgba(28, 37, 32, 0.06);
+  border: 1.5px solid rgba(226, 220, 208, 0.7);
+  transition: all 0.2s ease;
+}
+
+.stitch-btn-terracotta {
+  background-color: var(--stitch-tertiary-container);
+  color: #ffffff;
+  border-radius: 1rem;
+  min-height: 56px;
+  font-weight: 700;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  box-shadow: 0 6px 20px -4px rgba(89, 24, 0, 0.25);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.stitch-btn-terracotta:active {
+  transform: scale(0.98);
+}
+
+.stitch-btn-forest {
+  background-color: var(--stitch-primary);
+  color: #ffffff;
+  border-radius: 1rem;
+  min-height: 56px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 54, 41, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.stitch-btn-forest:active {
+  transform: scale(0.98);
+}
+
+@keyframes waveBounce {
+  0%, 100% { height: 10px; }
+  50% { height: 30px; }
+}
+
+.wave-bar {
+  width: 5px;
+  border-radius: 9999px;
+  animation: waveBounce 1.2s ease-in-out infinite;
+}
+

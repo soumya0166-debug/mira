@@ -1,16 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  HeartHandshake, 
-  Globe, 
-  Type, 
-  UserCheck, 
+  User, 
+  LogOut, 
   Shield, 
-  ChevronDown,
-  Volume2,
-  VolumeX,
-  LogOut,
-  Users,
-  User
+  UserCheck 
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import audioService from '../../services/audioService';
@@ -31,10 +24,8 @@ export default function Header() {
     logout,
     switchUser,
     availableUsers,
+    activeTab,
     setActiveTab,
-    isOnline,
-    syncStatus,
-    pendingCount,
     voiceEnabled,
     setVoiceEnabled
   } = useApp();
@@ -44,7 +35,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const isPatient = mode === 'patient';
-  const otherUsers = availableUsers.filter((u) => u.id !== currentUser?.id);
+  const otherUsers = availableUsers?.filter((u) => u.id !== currentUser?.id) || [];
 
   // Close menus when clicking outside
   const headerRef = useRef(null);
@@ -66,23 +57,31 @@ export default function Header() {
     setUserMenuOpen(false);
   };
 
-  const handleLogout = () => {
-    closeAll();
-    logout();
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case 'home': return 'Home';
+      case 'games': return 'Games';
+      case 'memories': return 'Memories';
+      case 'mira': return 'Companion';
+      case 'guardian':
+      case 'wellness':
+      case 'caregiver': return 'Caregiver Dashboard';
+      case 'settings': return 'Settings';
+      case 'profile': return 'Profile';
+      default: return 'Home';
+    }
   };
 
-  const handleSwitchUser = (userId) => {
-    closeAll();
-    switchUser(userId);
-  };
+  const currentAvatarImg = isPatient ? '/assets/deben_baba.png' : '/assets/profile_ananya.png';
 
   return (
     <header 
       ref={headerRef}
       style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid var(--ivory-border)',
-        boxShadow: '0 2px 10px rgba(107, 29, 47, 0.05)',
+        backgroundColor: 'rgba(242, 252, 244, 0.95)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1.5px solid rgba(226, 220, 208, 0.8)',
+        boxShadow: '0 1px 8px rgba(0, 0, 0, 0.04)',
         position: 'sticky',
         top: 0,
         zIndex: 50
@@ -90,173 +89,93 @@ export default function Header() {
     >
       <div 
         style={{
-          maxWidth: '1120px',
+          maxWidth: '840px',
           margin: '0 auto',
-          padding: '0.75rem 1rem',
+          padding: '0.65rem 1rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
           gap: '0.75rem'
         }}
       >
-        {/* Brand Logo & Name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div 
-            style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, var(--wine-700) 0%, var(--wine-900) 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: '0 4px 10px rgba(107, 29, 47, 0.25)'
+        {/* Brand Logo & Screen Title */}
+        <div 
+          onClick={() => setActiveTab('home')}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', cursor: 'pointer' }}
+        >
+          <img
+            src="/assets/mira_logo.png"
+            alt="MIRA Logo"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
             }}
-          >
-            <HeartHandshake size={24} style={{ color: '#fbc6d5' }} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <span 
-                style={{
-                  fontFamily: "'Playfair Display', Georgia, serif",
-                  fontSize: '1.4rem',
-                  fontWeight: 800,
-                  color: 'var(--primary-teal)',
-                  letterSpacing: '-0.02em'
-                }}
-              >
-                MIND AI – NER
-              </span>
-              <span 
-                className="badge" 
-                style={{ 
-                  backgroundColor: isPatient ? '#ecfdf5' : '#eff6ff',
-                  color: isPatient ? '#065f46' : '#1e40af',
-                  fontSize: '0.75rem',
-                  fontWeight: 700
-                }}
-              >
-                {isPatient ? '👵 ' + (t.patientMode || 'Elderly') : '👩‍💼 ' + (t.guardianMode || 'Caregiver')}
-              </span>
-              {/* Connection & Sync Status Pill */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  backgroundColor: !isOnline ? '#eff6ff' : (syncStatus === 'syncing' ? '#fefce8' : (pendingCount > 0 ? '#fef2f2' : '#f0fdf4')),
-                  color: !isOnline ? '#1d4ed8' : (syncStatus === 'syncing' ? '#a16207' : (pendingCount > 0 ? '#b91c1c' : '#15803d')),
-                  border: `1px solid ${!isOnline ? '#bfdbfe' : (syncStatus === 'syncing' ? '#fef08a' : (pendingCount > 0 ? '#fecaca' : '#bbf7d0'))}`
-                }}
-                title={!isOnline ? 'Operating in offline mode. All progress is safely saved locally.' : (pendingCount > 0 ? `${pendingCount} items pending cloud sync.` : 'All activities and settings are in sync with cloud.')}
-              >
-                <span style={{ fontSize: '0.65rem' }}>
-                  {!isOnline ? '🔵' : (syncStatus === 'syncing' ? '🟡' : (pendingCount > 0 ? '🔴' : '🟢'))}
-                </span>
-                <span>
-                  {!isOnline ? (t.common?.offlineSaved || 'Offline — Saved') : (syncStatus === 'syncing' ? (t.common?.syncing || 'Syncing…') : (pendingCount > 0 ? `${t.common?.syncPending || 'Sync Pending'} (${pendingCount})` : (t.common?.onlineSynced || 'Online — Synced')))}
-                </span>
-              </div>
-            </div>
-            <p 
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--text-muted)',
-                lineHeight: 1.2
-              }}
-            >
-              MDoNER Digital Health • {isPatient ? (patient?.preferredName || patient?.name ? `For ${patient.preferredName || patient.name}` : 'Elderly Mode') : (guardian?.name ? `Caregiver: ${guardian.name}` : 'Caregiver Mode')}
-            </p>
+            style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+          />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--stitch-primary)', lineHeight: 1.1 }}>
+              MIRA
+            </span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--stitch-on-surface-variant)', lineHeight: 1.1 }}>
+              {getTabTitle()}
+            </span>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {/* Voice Guidance Toggle for Seniors */}
+        {/* Action Controls: Size toggle, Language, Voice chime, Profile */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {/* Quick Voice Read Toggle */}
           <button 
             onClick={() => {
               const next = !voiceEnabled;
               setVoiceEnabled(next);
               if (next) {
                 audioService.speak(
-                  language === 'as' ? 'কণ্ঠ সহায়ক সক্ৰিয় কৰা হৈছে' :
-                  language === 'bn' ? 'কণ্ঠ নির্দেশিকা সক্রিয় করা হয়েছে' :
-                  language === 'brx' ? 'Voice guidance on' :
-                  language === 'mni' ? 'Voice guidance on' :
-                  'Voice guidance enabled',
+                  language === 'as' ? 'কণ্ঠ সহায়ক সক্ৰিয়' : 'Voice guidance enabled',
                   language
                 );
               }
             }}
-            title={voiceEnabled ? "Voice guidance is ON. Tap to mute." : "Voice guidance is OFF. Tap to enable speech."}
-            aria-label={voiceEnabled ? "Mute voice guidance" : "Enable voice guidance"}
+            title={voiceEnabled ? "Voice guidance is ON" : "Voice guidance is OFF"}
+            aria-label="Toggle voice"
             style={{
-              padding: '0.45rem 0.8rem',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: voiceEnabled ? '#ecfdf5' : '#fef2f2',
-              border: `1.5px solid ${voiceEnabled ? '#10b981' : '#f87171'}`,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              color: voiceEnabled ? '#047857' : '#b91c1c',
-              fontSize: '0.82rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>{voiceEnabled ? (t.common?.voiceOn || 'Voice ON') : (t.common?.voiceOff || 'Voice OFF')}</span>
-          </button>
-
-          {/* Quick Sound Chime Test */}
-          <button 
-            onClick={() => audioService.playReminderChime()}
-            title="Play gentle reminder chime"
-            aria-label="Play soothing chime sound"
-            style={{
-              width: '38px',
-              height: '38px',
+              width: '42px',
+              height: '42px',
               borderRadius: '50%',
-              backgroundColor: 'var(--pink-50)',
-              border: '1px solid var(--pink-200)',
+              backgroundColor: voiceEnabled ? 'var(--stitch-surface-container)' : '#fef2f2',
+              color: voiceEnabled ? 'var(--stitch-primary)' : '#b91c1c',
+              border: 'none',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--wine-700)',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
             }}
           >
-            <span style={{ fontSize: '1rem' }}>🔔</span>
+            <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>
+              {voiceEnabled ? 'volume_up' : 'volume_off'}
+            </span>
           </button>
 
-          {/* Font Size Selector */}
+          {/* Format Size Adjust Button */}
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => { setFontMenuOpen(!fontMenuOpen); setLangMenuOpen(false); setUserMenuOpen(false); }}
               aria-label="Adjust text size"
               style={{
-                padding: '0.45rem 0.75rem',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--ivory-soft)',
-                border: '1px solid var(--ivory-border)',
-                color: 'var(--text-main)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--stitch-surface-container)',
+                color: 'var(--stitch-on-surface)',
+                border: 'none',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.35rem'
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
               }}
             >
-              <Type size={16} style={{ color: 'var(--wine-700)' }} />
-              <span>{fontSize === 'normal' ? 'A' : fontSize === 'large' ? 'A+' : 'A++'}</span>
-              <ChevronDown size={14} />
+              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>format_size</span>
             </button>
 
             {fontMenuOpen && (
@@ -266,21 +185,21 @@ export default function Header() {
                   right: 0,
                   top: '110%',
                   background: '#ffffff',
-                  border: '1px solid var(--ivory-border)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-lg)',
+                  border: '1.5px solid rgba(226, 220, 208, 0.8)',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                   padding: '0.5rem',
                   zIndex: 100,
-                  minWidth: '150px'
+                  minWidth: '160px'
                 }}
               >
-                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', padding: '0.25rem 0.5rem' }}>
-                  {t.common?.fontSize || 'Font Size'}
+                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--stitch-on-surface-variant)', padding: '0.25rem 0.5rem' }}>
+                  Text Size
                 </div>
                 {[
-                  { key: 'normal', label: t.common?.normalText || 'Normal', size: '1rem' },
-                  { key: 'large', label: t.common?.largeText || 'Large', size: '1.15rem' },
-                  { key: 'xlarge', label: t.common?.xlargeText || 'Extra Large', size: '1.3rem' }
+                  { key: 'normal', label: 'Normal (18px)', size: '1rem' },
+                  { key: 'large', label: 'Large (20px)', size: '1.15rem' },
+                  { key: 'xlarge', label: 'Extra Large (24px)', size: '1.3rem' }
                 ].map((item) => (
                   <button
                     key={item.key}
@@ -291,12 +210,14 @@ export default function Header() {
                     style={{
                       width: '100%',
                       textAlign: 'left',
-                      padding: '0.5rem',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor: fontSize === item.key ? 'var(--pink-100)' : 'transparent',
-                      color: fontSize === item.key ? 'var(--wine-900)' : 'var(--text-main)',
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '10px',
+                      backgroundColor: fontSize === item.key ? 'var(--stitch-surface-container)' : 'transparent',
+                      color: fontSize === item.key ? 'var(--stitch-primary)' : 'var(--stitch-on-surface)',
                       fontWeight: fontSize === item.key ? 700 : 500,
-                      fontSize: item.size
+                      fontSize: item.size,
+                      border: 'none',
+                      cursor: 'pointer'
                     }}
                   >
                     {item.label}
@@ -312,21 +233,22 @@ export default function Header() {
               onClick={() => { setLangMenuOpen(!langMenuOpen); setFontMenuOpen(false); setUserMenuOpen(false); }}
               aria-label="Change language"
               style={{
-                padding: '0.45rem 0.75rem',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--ivory-soft)',
-                border: '1px solid var(--ivory-border)',
-                color: 'var(--text-main)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
+                height: '42px',
+                padding: '0 0.75rem',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--stitch-surface-container)',
+                color: 'var(--stitch-on-surface)',
+                border: 'none',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.35rem'
+                gap: '0.35rem',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                cursor: 'pointer'
               }}
             >
-              <Globe size={16} style={{ color: 'var(--wine-700)' }} />
-              <span>{languages.find((l) => l.code === language)?.native || 'English'}</span>
-              <ChevronDown size={14} />
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--stitch-primary)' }}>translate</span>
+              <span>{languages?.find((l) => l.code === language)?.native || 'English'}</span>
             </button>
 
             {langMenuOpen && (
@@ -336,17 +258,17 @@ export default function Header() {
                   right: 0,
                   top: '110%',
                   background: '#ffffff',
-                  border: '1px solid var(--ivory-border)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-lg)',
+                  border: '1.5px solid rgba(226, 220, 208, 0.8)',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                   padding: '0.5rem',
                   zIndex: 100,
-                  minWidth: '180px',
-                  maxHeight: '280px',
+                  minWidth: '190px',
+                  maxHeight: '300px',
                   overflowY: 'auto'
                 }}
               >
-                {languages.map((item) => (
+                {languages?.map((item) => (
                   <button
                     key={item.code}
                     onClick={() => {
@@ -361,72 +283,52 @@ export default function Header() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: 'var(--radius-sm)',
-                      backgroundColor: language === item.code ? 'var(--pink-100)' : 'transparent',
-                      color: language === item.code ? 'var(--wine-900)' : 'var(--text-main)',
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '10px',
+                      backgroundColor: language === item.code ? 'var(--stitch-surface-container)' : 'transparent',
+                      color: language === item.code ? 'var(--stitch-primary)' : 'var(--stitch-on-surface)',
                       fontWeight: language === item.code ? 700 : 500,
-                      fontSize: '0.9rem'
+                      fontSize: '0.9rem',
+                      border: 'none',
+                      cursor: 'pointer'
                     }}
                   >
                     <span>{item.native}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.label}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--stitch-on-surface-variant)' }}>{item.label}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Primary Role Switcher Toggle (For Caregiver only) */}
-          {currentUser?.role === 'guardian' && (
-            <button 
-              onClick={() => switchMode(isPatient ? 'guardian' : 'patient')}
-              className={isPatient ? 'btn-primary' : 'btn-secondary'}
-              style={{
-                padding: '0.45rem 1rem',
-                fontSize: '0.85rem',
-                minHeight: '40px'
-              }}
-              title={isPatient ? 'Return to Guardian Dashboard' : 'Preview Patient-Friendly Interface'}
-            >
-              {isPatient ? (
-                <>
-                  <Shield size={16} />
-                  <span>{t.common?.guardianHub || t.guardianMode || 'Guardian Hub'}</span>
-                </>
-              ) : (
-                <>
-                  <UserCheck size={16} />
-                  <span>{t.common?.previewElder || 'Preview Elder View'}</span>
-                </>
-              )}
-            </button>
-          )}
-
-          {/* User Avatar & Account Menu */}
+          {/* Profile & Role Switcher */}
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => { setUserMenuOpen(!userMenuOpen); setLangMenuOpen(false); setFontMenuOpen(false); }}
               aria-label="Account menu"
               style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                padding: '2px',
+                backgroundColor: 'var(--stitch-surface-container)',
+                border: '2px solid var(--stitch-primary)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.35rem 0.7rem 0.35rem 0.45rem',
-                borderRadius: 'var(--radius-full)',
-                backgroundColor: 'var(--wine-50)',
-                border: '1.5px solid var(--wine-100)',
-                color: 'var(--wine-800)',
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                minHeight: '40px'
+                justifyContent: 'center',
+                cursor: 'pointer',
+                overflow: 'hidden'
               }}
             >
-              <span style={{ fontSize: '1.35rem', lineHeight: 1 }}>{currentUser?.avatar || '🧑'}</span>
-              <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {currentUser?.name?.split(' ')[0]}
-              </span>
-              <ChevronDown size={13} />
+              <img
+                src={currentAvatarImg}
+                alt="Profile"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = '/assets/deben_baba.png';
+                }}
+                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+              />
             </button>
 
             {userMenuOpen && (
@@ -436,9 +338,9 @@ export default function Header() {
                   right: 0,
                   top: '110%',
                   background: '#ffffff',
-                  border: '1px solid var(--ivory-border)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-lg)',
+                  border: '1.5px solid rgba(226, 220, 208, 0.8)',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                   padding: '0.5rem',
                   zIndex: 100,
                   minWidth: '220px'
@@ -448,29 +350,56 @@ export default function Header() {
                 <div
                   style={{
                     padding: '0.65rem 0.75rem',
-                    borderBottom: '1px solid var(--ivory-border)',
+                    borderBottom: '1px solid rgba(226, 220, 208, 0.8)',
                     marginBottom: '0.4rem'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.6rem' }}>{currentUser?.avatar || '🧑'}</span>
+                    <img 
+                      src={currentAvatarImg} 
+                      alt="" 
+                      style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }}
+                    />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--wine-900)' }}>
-                        {currentUser?.name}
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--stitch-primary)' }}>
+                        {currentUser?.name || (isPatient ? 'Deben Baruah (Baba)' : 'Ananya Baruah')}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {currentUser?.email}
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--wine-600)', fontWeight: 600, marginTop: '1px' }}>
-                        {currentUser?.role === 'patient' 
-                          ? `Caregiver: ${patient?.emergencyContact?.name || 'Dr. Ananya Barua'}`
-                          : `Caring for: ${currentUser?.lovedOneName || patient?.name || 'Radha Barua'}`}
+                      <div style={{ fontSize: '0.75rem', color: 'var(--stitch-on-surface-variant)' }}>
+                        {isPatient ? 'Shillong Home' : 'Caregiver'}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Profile */}
+                {/* Role Switcher */}
+                <button
+                  onClick={() => {
+                    closeAll();
+                    switchMode(isPatient ? 'guardian' : 'patient');
+                    setActiveTab(isPatient ? 'guardian' : 'home');
+                  }}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '10px',
+                    color: 'var(--stitch-primary)',
+                    backgroundColor: 'var(--stitch-surface-container-low)',
+                    fontSize: '0.88rem',
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    border: 'none',
+                    cursor: 'pointer',
+                    marginBottom: '0.35rem'
+                  }}
+                >
+                  {isPatient ? <Shield size={16} /> : <UserCheck size={16} />}
+                  <span>{isPatient ? 'Switch to Caregiver Hub' : 'Switch to Elder View'}</span>
+                </button>
+
+                {/* Profile Link */}
                 <button
                   onClick={() => { closeAll(); setActiveTab('profile'); }}
                   style={{
@@ -479,66 +408,42 @@ export default function Header() {
                     alignItems: 'center',
                     gap: '0.5rem',
                     padding: '0.5rem 0.75rem',
-                    borderRadius: 'var(--radius-sm)',
-                    color: 'var(--text-main)',
+                    borderRadius: '10px',
+                    color: 'var(--stitch-on-surface)',
                     fontSize: '0.88rem',
                     fontWeight: 500,
-                    textAlign: 'left'
+                    textAlign: 'left',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer'
                   }}
                 >
-                  <User size={15} style={{ color: 'var(--wine-600)' }} />
-                  {t.profile?.title || 'Care Profile & Account'}
+                  <User size={16} style={{ color: 'var(--stitch-primary)' }} />
+                  Care Profile & Settings
                 </button>
 
-                {/* Switch Account */}
-                {otherUsers.length > 0 && (
-                  <div>
-                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', padding: '0.4rem 0.75rem 0.2rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Switch Account
-                    </div>
-                    {otherUsers.map((u) => (
-                      <button
-                        key={u.id}
-                        onClick={() => handleSwitchUser(u.id)}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          padding: '0.45rem 0.75rem',
-                          borderRadius: 'var(--radius-sm)',
-                          color: 'var(--text-main)',
-                          fontSize: '0.88rem',
-                          fontWeight: 500,
-                          textAlign: 'left'
-                        }}
-                      >
-                        <span style={{ fontSize: '1.15rem' }}>{u.avatar}</span>
-                        <span>{u.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-
                 {/* Divider + Sign Out */}
-                <div style={{ borderTop: '1px solid var(--ivory-border)', marginTop: '0.4rem', paddingTop: '0.4rem' }}>
+                <div style={{ borderTop: '1px solid rgba(226, 220, 208, 0.8)', marginTop: '0.4rem', paddingTop: '0.4rem' }}>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => { closeAll(); logout(); }}
                     style={{
                       width: '100%',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
                       padding: '0.5rem 0.75rem',
-                      borderRadius: 'var(--radius-sm)',
+                      borderRadius: '10px',
                       color: '#dc2626',
                       fontSize: '0.88rem',
                       fontWeight: 600,
-                      textAlign: 'left'
+                      textAlign: 'left',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer'
                     }}
                   >
-                    <LogOut size={15} />
-                    {t.profile?.signOut || t.common?.signOut || 'Sign Out'}
+                    <LogOut size={16} />
+                    Sign Out
                   </button>
                 </div>
               </div>

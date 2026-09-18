@@ -55,7 +55,8 @@ export default function App() {
       return (
         <LandingView
           onGetStarted={() => {
-            setAuthTab('signup');
+            if (loginById) loginById('patient-1');
+            setActiveTab('home');
             setLandingMode(false);
           }}
           onLogin={() => {

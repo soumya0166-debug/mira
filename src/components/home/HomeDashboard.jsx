@@ -1,348 +1,543 @@
-import React from 'react';
-import { Play, ArrowRight, Heart, Sparkles, Clock, CheckCircle2, Brain, Mic, ShieldAlert } from 'lucide-react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { ALL_GAMES } from '../games/GamesHub';
-import SpeakButton from '../common/SpeakButton';
-import { getGameMetadata } from '../../i18n/gameTranslations';
+import audioService from '../../services/audioService';
 
 export default function HomeDashboard({ onNavigateTab, onSelectGame }) {
-  const { t, patient, memories, routines, gameSessions, language, isOnline, offlineActivitiesCount, pendingCount } = useApp();
+  const { setActiveTab } = useApp();
+  const [isPlayingAnanyaVoice, setIsPlayingAnanyaVoice] = useState(false);
+  const [callingFamily, setCallingFamily] = useState(null);
 
-  // Gentle greeting based on time of day
-  const hour = new Date().getHours();
-  let greetingTime = t.home?.greetingMorning || 'Good Morning,';
-  if (hour >= 12 && hour < 17) greetingTime = t.home?.greetingAfternoon || 'Good Afternoon,';
-  else if (hour >= 17) greetingTime = t.home?.greetingEvening || 'Good Evening,';
+  // Daily routine tasks with interactive check state
+  const [dayTasks, setDayTasks] = useState([
+    { id: 1, title: 'Morning tea & garden breathing', time: 'Completed at 7:30 AM', done: true },
+    { id: 2, title: 'Gentle veranda walk', time: 'Completed at 9:15 AM', done: true },
+    { id: 3, title: 'Afternoon story with MIRA', time: 'Coming up at 4:00 PM', done: false }
+  ]);
 
-  const patientName = patient?.preferredName || 'Radha Dadi';
-
-  // Recommended activity for today
-  const recommendedGame = ALL_GAMES[0]; // Heritage Memory Match
-  const recMeta = getGameMetadata(recommendedGame.id, language) || {
-    title: t.games?.game1Title || recommendedGame.title,
-    desc: t.games?.game1Desc || recommendedGame.desc
+  const toggleTask = (id) => {
+    setDayTasks(tasks => tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
   };
 
-  // Today's Routine summary
-  const nextRoutine = routines?.find(r => !r.completedToday) || routines?.[0];
+  const handlePlayAnanyaVoice = () => {
+    setIsPlayingAnanyaVoice(true);
+    audioService.speak(
+      "Good morning Baba! Hope you had peaceful rest. Don't forget to take your ginger tea on the veranda.",
+      'en'
+    );
+    setTimeout(() => setIsPlayingAnanyaVoice(false), 4500);
+  };
 
-  // Today's Cherished Memory spark
-  const featuredMemory = memories?.[0];
+  const completedCount = dayTasks.filter(t => t.done).length;
 
   return (
-    <div style={{ maxWidth: '820px', margin: '0 auto' }}>
-      {/* 1. Mandatory Non-Medical Disclaimer Header */}
-      <div
-        style={{
-          padding: '0.65rem 1rem',
-          backgroundColor: '#fef3c7',
-          color: '#92400e',
-          borderRadius: '14px',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          border: '1px solid #fde68a'
-        }}
-      >
-        <ShieldAlert size={18} style={{ flexShrink: 0 }} />
-        <span>{t.disclaimerText || 'Non-medical wellness platform for gentle cognitive engagement and memory assistance.'}</span>
-      </div>
-
-      {/* Offline-First Readiness Status Indicator */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.65rem',
-          padding: '0.65rem 1rem',
-          borderRadius: '16px',
-          backgroundColor: isOnline ? '#f0fdf4' : '#eff6ff',
-          border: `1px solid ${isOnline ? '#bbf7d0' : '#bfdbfe'}`,
-          color: isOnline ? '#15803d' : '#1d4ed8',
-          marginBottom: '1.25rem',
-          fontSize: '0.95rem',
-          fontWeight: 600
-        }}
-      >
-        <span style={{ fontSize: '1.1rem' }}>{isOnline ? '🟢' : '🔵'}</span>
-        <span>
-          {isOnline
-            ? `Today's cognitive activities are ready • ${offlineActivitiesCount || 18} activities cached & ready offline`
-            : `${t.common?.offlineActive || 'Offline mode active'} — ${t.common?.offlineNotice || 'All games, routines & memories work immediately. Progress will sync automatically later.'}`}
-        </span>
-      </div>
-
-      {/* 2. Warm Elderly Greeting with Audio Summary */}
-      <div style={{ marginBottom: '1.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ margin: '0 0 0.35rem', color: 'var(--text-main)', fontSize: '2.2rem', fontWeight: 800 }}>
-            {greetingTime} {patientName} 🌸
-          </h1>
-          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '1.15rem' }}>
-            {t.home?.greetingSubtitle || 'Today is peaceful and serene. How would you like to spend your morning?'}
-          </p>
-        </div>
-        <SpeakButton 
-          text={`${greetingTime} ${patientName}. ${t.home?.greetingSubtitle || ''}. ${t.home?.todayRecommendation || "Today's activity"}: ${recMeta.title}. ${nextRoutine ? (nextRoutine.title + ' at ' + nextRoutine.time) : ''}`} 
-          label="Listen to Today's Summary" 
-          variant="senior"
-        />
-      </div>
-
-      {/* 3. Today's Recommended Activity Card with "Start Today's Activity" */}
-      <div
-        className="mira-card"
-        style={{
-          padding: '1.75rem',
-          marginBottom: '1.5rem',
-          background: 'linear-gradient(135deg, #0e4a42 0%, #166534 100%)',
-          color: '#ffffff',
-          borderRadius: '24px',
-          boxShadow: '0 8px 24px rgba(14, 74, 66, 0.25)'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <span
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  padding: '0.3rem 0.8rem',
-                  borderRadius: '14px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase'
-                }}
-              >
-                {t.home?.todayRecommendation || "Today's Recommended Activity"}
-              </span>
-              <SpeakButton text={`${recMeta.title}. ${recMeta.desc}`} variant="pill" label="Listen" />
-            </div>
-            <h2 style={{ margin: '0.5rem 0 0.35rem', fontSize: '1.75rem', color: '#ffffff' }}>
-              {recMeta.title}
-            </h2>
-            <p style={{ margin: 0, fontSize: '1rem', color: '#e2e8f0', maxWidth: '500px' }}>
-              {recMeta.desc}
+    <div className="stitch-container">
+      {/* 1. Warm Top Greeting Card */}
+      <section className="stitch-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--stitch-primary)', margin: 0, letterSpacing: '-0.01em' }}>
+              Good morning, Deben Dadu 🌿
+            </h1>
+            <p style={{ margin: '0.25rem 0 0', fontSize: '1.05rem', color: 'var(--stitch-on-surface-variant)', fontWeight: 500 }}>
+              Tuesday, 18 September · Shillong
             </p>
           </div>
-          <span style={{ fontSize: '3.5rem' }}>{recommendedGame.icon}</span>
-        </div>
 
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => {
-              if (onSelectGame) onSelectGame(recommendedGame.id);
-              else if (onNavigateTab) onNavigateTab('games');
-            }}
-            style={{
-              padding: '0.85rem 1.75rem',
-              backgroundColor: '#ffffff',
-              color: '#0e4a42',
-              fontWeight: 700,
-              fontSize: '1.1rem',
-              borderRadius: '16px',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.6rem',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-            }}
-          >
-            <Play size={20} fill="#0e4a42" /> {t.home?.startTodayActivity || "Start Today's Activity"}
-          </button>
-          <span style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>
-            {t.home?.gentlePacing || 'Gentle Pacing • No Rush • Culturally Calming'}
-          </span>
-        </div>
-      </div>
-
-      {/* 4. Quick MIRA Shortcut Button */}
-      <div
-        onClick={() => onNavigateTab && onNavigateTab('mira')}
-        className="mira-card"
-        style={{
-          padding: '1.25rem 1.5rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          backgroundColor: '#f0fdf4',
-          borderColor: '#86efac',
-          borderRadius: '20px',
-          cursor: 'pointer',
-          transition: 'transform 0.2s ease'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div
             style={{
-              width: '50px',
-              height: '50px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--primary-teal)',
-              color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.5rem'
+              gap: '0.35rem',
+              padding: '0.4rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'var(--stitch-surface-container)',
+              color: 'var(--stitch-on-surface)',
+              fontSize: '1rem',
+              fontWeight: 700,
+              boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+              flexShrink: 0
             }}
           >
-            🎙️
+            <span className="material-symbols-outlined" style={{ fontSize: '22px', color: 'var(--stitch-turmeric)' }}>
+              wb_sunny
+            </span>
+            <span>22°C</span>
           </div>
-          <div>
-            <strong style={{ display: 'block', fontSize: '1.1rem', color: 'var(--primary-teal)', marginBottom: '0.2rem' }}>
-              {t.home?.miraShortcut || 'Talk to MIRA Memory Assistant'}
-            </strong>
-            <span style={{ fontSize: '0.9rem', color: '#166534' }}>
-              {t.home?.miraShortcutDesc || 'Tap here to ask: "What is my routine today?" or "Tell me about my family"'}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1rem', color: 'var(--stitch-secondary)', fontWeight: 600 }}>
+            Pleasant & sunny pine morning breeze
+          </span>
+        </div>
+
+        {/* Audio Note from Family Member */}
+        <button
+          onClick={handlePlayAnanyaVoice}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
+            padding: '0.75rem 1rem',
+            borderRadius: '1rem',
+            backgroundColor: 'var(--stitch-surface-container-low)',
+            border: 'none',
+            cursor: 'pointer',
+            textAlign: 'left',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
+            transition: 'background-color 0.15s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', minWidth: 0 }}>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--stitch-secondary-fixed)',
+                color: 'var(--stitch-on-secondary-fixed)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>
+                {isPlayingAnanyaVoice ? 'volume_up' : 'play_arrow'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--stitch-primary)' }}>
+                Voice note from Ananya
+              </span>
+              <span style={{ fontSize: '0.9rem', color: 'var(--stitch-on-surface-variant)', fontStyle: 'italic', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                “Good morning Baba, hope you had peaceful rest”
+              </span>
+            </div>
+          </div>
+          <span className="material-symbols-outlined" style={{ fontSize: '24px', color: 'var(--stitch-on-surface-variant)', flexShrink: 0 }}>
+            {isPlayingAnanyaVoice ? 'pause' : 'play_arrow'}
+          </span>
+        </button>
+      </section>
+
+      {/* 2. Hero Daily Recommendation */}
+      <section className="stitch-card" style={{ position: 'relative', overflow: 'hidden', padding: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <span
+            style={{
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'var(--stitch-secondary-container)',
+              color: 'var(--stitch-on-secondary-container)',
+              fontSize: '0.95rem',
+              fontWeight: 700
+            }}
+          >
+            Today's Gentle Activity
+          </span>
+          <span className="material-symbols-outlined" style={{ fontSize: '28px', color: 'var(--stitch-secondary)' }}>
+            spa
+          </span>
+        </div>
+
+        {/* Tactile Visual Memory Image */}
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '180px',
+            borderRadius: '1rem',
+            overflow: 'hidden',
+            margin: '0.5rem 0 1rem',
+            backgroundColor: 'var(--stitch-surface-container)'
+          }}
+        >
+          <img
+            src="/assets/tea_cups.png"
+            alt="Traditional Assam clay tea cups on woven bamboo mat"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = '/assets/veranda_tea.png';
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(to top, rgba(0, 54, 41, 0.85) 0%, rgba(0,0,0,0) 60%)',
+              display: 'flex',
+              alignItems: 'flex-end',
+              padding: '0.85rem'
+            }}
+          >
+            <span style={{ color: '#ffffff', fontSize: '1rem', fontWeight: 700, textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}>
+              Tea Garden Memories of Tezpur
             </span>
           </div>
         </div>
-        <ArrowRight size={22} style={{ color: 'var(--primary-teal)' }} />
-      </div>
 
-      {/* 5. Two-Column Row: Today's Routine + Memory Reminders */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '1.25rem',
-          marginBottom: '1.5rem'
-        }}
-      >
-        {/* Daily Routine Summary */}
-        <div className="mira-card" style={{ padding: '1.5rem', borderRadius: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 700 }}>
-              <Clock size={18} />
-              <span>{t.home?.routineHydration || t.routine?.title || 'Routine & Hydration'}</span>
-            </div>
-            <button
-              onClick={() => onNavigateTab && onNavigateTab('routines')}
-              style={{ background: 'none', border: 'none', color: 'var(--primary-teal)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
-            >
-              {t.home?.viewAll || 'View All'}
-            </button>
-          </div>
-
-          {nextRoutine ? (
-            <div style={{ padding: '1rem', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                <strong style={{ fontSize: '1.05rem', color: 'var(--text-main)' }}>{nextRoutine.title}</strong>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--primary-teal)', fontWeight: 700 }}>{nextRoutine.time}</span>
-                  <SpeakButton text={`${nextRoutine.title}. Scheduled for ${nextRoutine.time}. ${nextRoutine.description || ''}`} variant="icon" />
-                </div>
-              </div>
-              <p style={{ margin: '0.35rem 0 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                {nextRoutine.description}
-              </p>
-            </div>
-          ) : (
-            <p style={{ color: 'var(--text-muted)' }}>{t.routine?.completed || 'All scheduled routines for today are completed!'}</p>
-          )}
+        {/* Activity Details */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 700, color: 'var(--stitch-on-surface)', margin: 0 }}>
+            Remember the Morning Tea Objects
+          </h2>
+          <p style={{ fontSize: '1.05rem', color: 'var(--stitch-on-surface-variant)', margin: '0.25rem 0 0.75rem' }}>
+            A gentle 5-minute memory walk together with MIRA.
+          </p>
         </div>
 
-        {/* Memory Reminders Spark */}
-        <div className="mira-card" style={{ padding: '1.5rem', borderRadius: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#c2410c', fontWeight: 700 }}>
-              <Heart size={18} />
-              <span>{t.home?.memorySpark || 'Memory Spark'}</span>
+        {/* Soft attribute pills */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'var(--stitch-surface-container-high)',
+              color: 'var(--stitch-on-surface-variant)',
+              fontSize: '0.95rem',
+              fontWeight: 600
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>timer</span>
+            5 minutes
+          </span>
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'var(--stitch-surface-container-high)',
+              color: 'var(--stitch-on-surface-variant)',
+              fontSize: '0.95rem',
+              fontWeight: 600
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>psychology</span>
+            Calm pace
+          </span>
+          <span
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.35rem 0.85rem',
+              borderRadius: '9999px',
+              backgroundColor: 'var(--stitch-surface-container-high)',
+              color: 'var(--stitch-on-surface-variant)',
+              fontSize: '0.95rem',
+              fontWeight: 600
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--stitch-primary)' }}>favorite</span>
+            Memory & Joy
+          </span>
+        </div>
+
+        {/* Primary Action Tactile Terracotta Button */}
+        <button
+          onClick={() => {
+            if (onSelectGame) onSelectGame('heritage-memory-match');
+            if (onNavigateTab) onNavigateTab('games');
+            else setActiveTab('games');
+          }}
+          className="stitch-btn-terracotta"
+          style={{ width: '100%', height: '62px' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>play_circle</span>
+          <span style={{ letterSpacing: '0.04em' }}>START ACTIVITY</span>
+        </button>
+      </section>
+
+      {/* 3. Your Circle & Day Section */}
+      <section style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--stitch-primary)', margin: '0 0.25rem' }}>
+          Your Circle & Day
+        </h3>
+
+        {/* Card 1: My Memories */}
+        <div
+          onClick={() => {
+            if (onNavigateTab) onNavigateTab('memories');
+            else setActiveTab('memories');
+          }}
+          className="stitch-card"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ position: 'relative', width: '64px', height: '64px', borderRadius: '1rem', overflow: 'hidden', flexShrink: 0 }}>
+              <img
+                src="/assets/granddaughter_pooja.png"
+                alt="Pooja memory"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => { e.currentTarget.src = '/assets/veranda_tea.png'; }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '4px',
+                  right: '4px',
+                  width: '12px',
+                  height: '12px',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--stitch-tertiary-container)',
+                  border: '2px solid #ffffff'
+                }}
+              />
             </div>
-            <button
-              onClick={() => onNavigateTab && onNavigateTab('memories')}
-              style={{ background: 'none', border: 'none', color: 'var(--primary-teal)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
-            >
-              {t.home?.openVault || 'Open Vault'}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--stitch-on-surface)' }}>
+                  My Memories
+                </span>
+                <span
+                  style={{
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '9999px',
+                    backgroundColor: 'var(--stitch-tertiary-fixed)',
+                    color: 'var(--stitch-tertiary)',
+                    fontSize: '0.8rem',
+                    fontWeight: 700
+                  }}
+                >
+                  3 new
+                </span>
+              </div>
+              <p style={{ margin: '0.2rem 0 0', fontSize: '0.95rem', color: 'var(--stitch-on-surface-variant)' }}>
+                Photos from Ananya's visit to Umiam Lake
+              </p>
+            </div>
+          </div>
+          <span className="material-symbols-outlined" style={{ fontSize: '28px', color: 'var(--stitch-primary)' }}>
+            chevron_right
+          </span>
+        </div>
+
+        {/* Card 2: Call Family */}
+        <div className="stitch-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px', color: 'var(--stitch-primary)' }}>
+                perm_phone_msg
+              </span>
+              <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--stitch-on-surface)' }}>
+                Call Family
+              </span>
+            </div>
+            <span style={{ fontSize: '0.95rem', color: 'var(--stitch-on-surface-variant)', marginTop: '0.2rem' }}>
+              Ananya & Kabir on quick dial
+            </span>
           </div>
 
-          {featuredMemory ? (
-            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <button
+              onClick={() => {
+                setCallingFamily('Voice Call');
+                audioService.speak('Calling daughter Ananya in Guwahati...', 'en');
+                setTimeout(() => setCallingFamily(null), 3000);
+              }}
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--stitch-primary)',
+                color: '#ffffff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(0, 54, 41, 0.25)'
+              }}
+              title="Call Ananya"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>call</span>
+            </button>
+            <button
+              onClick={() => {
+                setCallingFamily('Video Call');
+                audioService.speak('Starting video call with Ananya and grandson Kabir...', 'en');
+                setTimeout(() => setCallingFamily(null), 3000);
+              }}
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--stitch-secondary)',
+                color: '#ffffff',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(35, 104, 104, 0.25)'
+              }}
+              title="Video Call Family"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>videocam</span>
+            </button>
+          </div>
+        </div>
+
+        {callingFamily && (
+          <div
+            style={{
+              padding: '0.75rem 1rem',
+              borderRadius: '1rem',
+              backgroundColor: '#ecfdf5',
+              border: '1px solid #10b981',
+              color: '#065f46',
+              fontSize: '0.95rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>ring_volume</span>
+            <span>Connecting {callingFamily} with Ananya...</span>
+          </div>
+        )}
+
+        {/* Card 3: My Day Schedule */}
+        <div className="stitch-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px', color: 'var(--stitch-primary)' }}>
+                calendar_today
+              </span>
+              <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--stitch-on-surface)' }}>
+                My Day
+              </span>
+            </div>
+            <span style={{ fontSize: '0.95rem', color: 'var(--stitch-secondary)', fontWeight: 600 }}>
+              {completedCount} of {dayTasks.length} completed
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            {dayTasks.map(task => (
+              <div
+                key={task.id}
+                onClick={() => toggleTask(task.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.85rem',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '1rem',
+                  backgroundColor: task.done ? 'var(--stitch-surface-container-low)' : 'var(--stitch-surface)',
+                  border: '1px solid rgba(226, 220, 208, 0.6)',
+                  cursor: 'pointer'
+                }}
+              >
                 <div
                   style={{
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '14px',
-                    backgroundColor: '#fef3c7',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: task.done ? 'var(--stitch-primary)' : 'transparent',
+                    border: task.done ? 'none' : '2px solid var(--stitch-outline-variant)',
+                    color: '#ffffff',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '2rem',
                     flexShrink: 0
                   }}
                 >
-                  📸
+                  {task.done ? (
+                    <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>check</span>
+                  ) : (
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px', color: 'var(--stitch-outline)' }}>schedule</span>
+                  )}
                 </div>
-                <div>
-                  <strong style={{ display: 'block', fontSize: '1rem', color: 'var(--text-main)', marginBottom: '0.2rem' }}>
-                    {featuredMemory.title}
-                  </strong>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    {featuredMemory.year} • {featuredMemory.category}
+
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span
+                    style={{
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      color: 'var(--stitch-on-surface)',
+                      textDecoration: task.done ? 'line-through' : 'none',
+                      opacity: task.done ? 0.8 : 1
+                    }}
+                  >
+                    {task.title}
+                  </span>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--stitch-on-surface-variant)' }}>
+                    {task.time}
                   </span>
                 </div>
               </div>
-              <SpeakButton text={`${featuredMemory.title}. ${featuredMemory.story || featuredMemory.category || ''}`} variant="icon" />
-            </div>
-          ) : (
-            <p style={{ color: 'var(--text-muted)' }}>{t.memory?.emptyDesc || 'Your private memory album is ready.'}</p>
-          )}
-        </div>
-      </div>
-
-      {/* 6. Today's Progress & Recent Activity */}
-      <div
-        className="mira-card"
-        style={{
-          padding: '1.5rem',
-          borderRadius: '20px',
-          backgroundColor: 'var(--card-bg)'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary-teal)', fontWeight: 700 }}>
-            <Sparkles size={18} />
-            <span>{t.home?.todayProgress || "Today's Engagement & Participation"}</span>
+            ))}
           </div>
+        </div>
+
+        {/* Card 4: Talk to MIRA anytime */}
+        <div
+          onClick={() => {
+            if (onNavigateTab) onNavigateTab('mira');
+            else setActiveTab('mira');
+          }}
+          className="stitch-card"
+          style={{
+            backgroundColor: 'var(--stitch-surface-container-low)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.75rem',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: 'var(--stitch-primary-fixed)',
+                color: 'var(--stitch-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>graphic_eq</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--stitch-primary)' }}>
+                Talk to MIRA anytime
+              </span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--stitch-on-surface-variant)' }}>
+                Assamese · Khasi · English
+              </span>
+            </div>
+          </div>
+
+          <p style={{ margin: 0, fontSize: '1rem', color: 'var(--stitch-on-surface-variant)', lineHeight: 1.4 }}>
+            Ask me about family memories, hear old folk songs, or just have a quiet chat.
+          </p>
+
           <button
-            onClick={() => onNavigateTab && onNavigateTab('wellness')}
-            style={{ background: 'none', border: 'none', color: 'var(--primary-teal)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer' }}
+            className="stitch-btn-forest"
+            style={{ width: '100%', height: '54px', marginTop: '0.25rem' }}
           >
-            {t.home?.viewProgress || 'View Progress'}
+            <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>mic</span>
+            <span>Tap to Speak</span>
           </button>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', textAlign: 'center' }}>
-          <div style={{ padding: '1rem', backgroundColor: '#f0fdf4', borderRadius: '16px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--primary-teal)', display: 'block' }}>
-              {gameSessions?.length || 3}
-            </span>
-            <span style={{ fontSize: '0.85rem', color: '#166534', fontWeight: 600 }}>{t.home?.activitiesCompleted || 'Activities Completed'}</span>
-          </div>
-
-          <div style={{ padding: '1rem', backgroundColor: '#eff6ff', borderRadius: '16px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#1d4ed8', display: 'block' }}>
-              5 {t.progress?.days || 'Days'}
-            </span>
-            <span style={{ fontSize: '0.85rem', color: '#1e40af', fontWeight: 600 }}>{t.home?.dailyStreak || 'Daily Streak'}</span>
-          </div>
-
-          <div style={{ padding: '1rem', backgroundColor: '#fef3c7', borderRadius: '16px' }}>
-            <span style={{ fontSize: '1.8rem', fontWeight: 800, color: '#b45309', display: 'block' }}>
-              94%
-            </span>
-            <span style={{ fontSize: '0.85rem', color: '#92400e', fontWeight: 600 }}>{t.home?.routineAdherence || 'Routine Adherence'}</span>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   );
 }
